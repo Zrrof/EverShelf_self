@@ -6101,12 +6101,45 @@ function _applyInsightPhase() {
 }
 
 // ===== DASHBOARD =====
+function _renderDashboardStatCards(summary = [], loading = false) {
+    const container = document.getElementById('dashboard-stats');
+    if (!container) return;
+
+    const counts = {};
+    (summary || []).forEach(s => {
+        const key = String(s.location || '').trim();
+        if (!key) return;
+        counts[key] = Number(s.product_count || 0);
+    });
+
+    const loadingCls = loading ? ' stat-loading' : '';
+    let html = '';
+    for (const [loc, meta] of Object.entries(LOCATIONS || {})) {
+        const count = Number.isFinite(counts[loc]) ? counts[loc] : 0;
+        html += `
+            <div class="stat-card" onclick="showPage('inventory', '${loc}')">
+                <span class="stat-icon">${meta.icon || '📦'}</span>
+                <span class="stat-value${loadingCls}" id="stat-${loc}">${loading ? '-' : count}</span>
+                <span class="stat-label">${escapeHtml(meta.label || loc)}</span>
+            </div>
+        `;
+    }
+
+    html += `
+        <div class="stat-card" onclick="showPage('shopping')">
+            <span class="stat-icon">🛒</span>
+            <span class="stat-value${loading ? ' stat-loading' : ''}" id="stat-spesa">-</span>
+            <span class="stat-label">${escapeHtml(t('nav.shopping'))}</span>
+            <span class="stat-price-total" id="stat-price-total" style="display:none"></span>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
 async function loadDashboard() {
     // Show shimmer on stat cards while loading
-    ['stat-dispensa', 'stat-frigo', 'stat-freezer'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.add('stat-loading');
-    });
+    _renderDashboardStatCards([], true);
 
     try {
         const [summaryData, statsData] = await Promise.all([
@@ -6116,21 +6149,7 @@ async function loadDashboard() {
         
         // Update stat cards
         const summary = summaryData.summary || [];
-        let total = 0;
-        ['dispensa', 'frigo', 'freezer'].forEach(loc => {
-            const s = summary.find(x => x.location === loc);
-            const count = s ? s.product_count : 0;
-            const el = document.getElementById(`stat-${loc}`);
-            el.textContent = count;
-            el.classList.remove('stat-loading');
-            total += count;
-        });
-        // Add non-standard locations
-        summary.forEach(s => {
-            if (!['dispensa', 'frigo', 'freezer'].includes(s.location)) {
-                total += s.product_count;
-            }
-        });
+        _renderDashboardStatCards(summary, false);
         // Load shopping list count from Bring!
         loadShoppingCount();
         // Show last known total instantly, then refresh from server
@@ -6359,9 +6378,9 @@ async function loadDashboard() {
     } catch (err) {
         console.error('Dashboard load error:', err);
         // Remove shimmer even on error so numbers don't disappear forever
-        ['stat-dispensa', 'stat-frigo', 'stat-freezer'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) { el.classList.remove('stat-loading'); if (el.textContent === '') el.textContent = '-'; }
+        document.querySelectorAll('#dashboard-stats .stat-value').forEach(el => {
+            el.classList.remove('stat-loading');
+            if (!el.textContent) el.textContent = '-';
         });
     }
 }
@@ -17460,6 +17479,41 @@ async function removeBringItem(idx) {
 let _shoppingTemplatesCache = [];
 let _templateDraftItems = [];
 
+async function addShoppingItemManual() {
+    loadShoppingList._lastUserInteraction = Date.now();
+    const rawName = prompt(t('shopping.manual_add_prompt'));
+    if (rawName == null) return;
+    const name = String(rawName).trim();
+    if (!name) {
+        showToast(t('shopping.manual_add_empty'), 'error');
+        return;
+    }
+    const rawSpec = prompt(t('shopping.manual_add_spec_prompt'));
+    if (rawSpec == null) return;
+    const specification = String(rawSpec || '').trim();
+    try {
+        const data = await api('shopping_add', {}, 'POST', {
+            items: [{ name, specification }],
+            listUUID: shoppingListUUID
+        });
+        if (data.success || data._offline) {
+            const exists = shoppingItems.some(i => i.name.toLowerCase() === name.toLowerCase());
+            if (!exists) {
+                shoppingItems.push({ name, specification, rawName: name });
+                _offlineShoppingCacheSet({ items: shoppingItems, listUUID: shoppingListUUID });
+                renderShoppingItems();
+                updateShoppingTabCounts();
+            }
+            loadShoppingCount();
+            showToast(t('shopping.added_one_inline').replace('{name}', name), 'success');
+            return;
+        }
+        showToast(data.error || t('error.bring_add'), 'error');
+    } catch (err) {
+        showToast(t('error.network'), 'error');
+    }
+}
+
 async function openShoppingTemplates() {
     const data = await api('templates_list');
     _shoppingTemplatesCache = data.templates || [];
@@ -25373,4 +25427,3 @@ async function _backgroundBringSync() {
 
     } catch (e) { /* silent — best effort */ }
 }
-
