@@ -17460,6 +17460,41 @@ async function removeBringItem(idx) {
 let _shoppingTemplatesCache = [];
 let _templateDraftItems = [];
 
+async function addShoppingItemManual() {
+    loadShoppingList._lastUserInteraction = Date.now();
+    const rawName = prompt(t('shopping.manual_add_prompt'));
+    if (rawName == null) return;
+    const name = String(rawName).trim();
+    if (!name) {
+        showToast(t('shopping.manual_add_empty'), 'error');
+        return;
+    }
+    const rawSpec = prompt(t('shopping.manual_add_spec_prompt'));
+    if (rawSpec == null) return;
+    const specification = String(rawSpec || '').trim();
+    try {
+        const data = await api('shopping_add', {}, 'POST', {
+            items: [{ name, specification }],
+            listUUID: shoppingListUUID
+        });
+        if (data.success || data._offline) {
+            const exists = shoppingItems.some(i => i.name.toLowerCase() === name.toLowerCase());
+            if (!exists) {
+                shoppingItems.push({ name, specification, rawName: name });
+                _offlineShoppingCacheSet({ items: shoppingItems, listUUID: shoppingListUUID });
+                renderShoppingItems();
+                updateShoppingTabCounts();
+            }
+            loadShoppingCount();
+            showToast(t('shopping.added_one_inline').replace('{name}', name), 'success');
+            return;
+        }
+        showToast(data.error || t('error.bring_add'), 'error');
+    } catch (err) {
+        showToast(t('error.network'), 'error');
+    }
+}
+
 async function openShoppingTemplates() {
     const data = await api('templates_list');
     _shoppingTemplatesCache = data.templates || [];
@@ -25373,4 +25408,3 @@ async function _backgroundBringSync() {
 
     } catch (e) { /* silent — best effort */ }
 }
-
