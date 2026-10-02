@@ -8551,6 +8551,7 @@ function geminiChat(PDO $db): void {
     $dietaryRestrictions = $input['dietary_restrictions'] ?? '';
     $lang = recipeNormalizeLang($input['lang'] ?? 'en');
     $langName = recipeLangName($lang);
+    $aiLabels = recipeAiLocaleLabels($lang);
 
     if (empty($message)) {
         echo json_encode(['success' => false, 'error' => 'Empty message']);
@@ -8570,16 +8571,16 @@ function geminiChat(PDO $db): void {
         }
         $isOpen = !empty($item['opened_at']) ||
                   (floatval($item['quantity']) > 0 && floatval($item['quantity']) < 1 && $item['unit'] === 'conf');
-        if ($isOpen) $line .= ' [APERTO]';
+        if ($isOpen) $line .= ' ' . $aiLabels['opened_flag'];
         $loc = mb_strtolower(trim((string)($item['location'] ?? '')));
         $inFreezer = ($loc === 'freezer' || $loc === 'surgelati');
         if ($item['expiry_date'] && !$inFreezer) {
             $daysLeft = (int)$item['days_left'];
-            $line .= recipeFormatExpiryLabel($daysLeft, (string)$item['expiry_date']);
+            $line .= recipeFormatExpiryLabel($daysLeft, (string)$item['expiry_date'], $lang);
         } elseif ($item['expiry_date'] && $inFreezer) {
-            $line .= ' [freezer — scadenza lunga, non urgente]';
+            $line .= ' ' . $aiLabels['freezer_not_urgent'];
         }
-        $line .= " (in {$item['location']})";
+        $line .= " ({$aiLabels['location_prefix']} {$item['location']})";
         $ingredientLines[] = $line;
     }
     $ingredientsText = implode("\n", $ingredientLines);
@@ -8603,7 +8604,7 @@ CONTEXT - AVAILABLE PANTRY INGREDIENTS:
 RULES:
 1. Always respond in {$langName}
 2. Use ONLY ingredients from the user's pantry (plus water, salt, pepper, oil which are assumed always available)
-3. Prioritize ingredients that expire soonest (sorted at the top). Ignore freezer urgency. Never invent expiry dates — use only the dates written next to each item (e.g. SCADE DOMANI (2026-07-27)). Same product name with different dates = different batches; prefer the sooner date.
+3. Prioritize ingredients that expire soonest (sorted at the top). Ignore freezer urgency. Never invent expiry dates — use only the dates written next to each item (e.g. EXPIRES TOMORROW (2026-07-27)). Same product name with different dates = different batches; prefer the sooner date.
 4. Be concise: no lengthy lists, get to the point
 5. If the user asks for a recipe or preparation, give clear instructions with quantities
 6. If there are no suitable ingredients for the request, say so honestly and suggest alternatives
@@ -9574,18 +9575,111 @@ function recipeNormalizeName(string $name): string {
     return preg_replace('/\s+/u', ' ', $n) ?? $n;
 }
 
+/** Language labels for AI pantry/prompt hints. */
+function recipeAiLocaleLabels(string $lang = 'en'): array {
+    $lang = recipeNormalizeLang($lang);
+    $map = [
+        'it' => [
+            'frozen_flag' => '[❄️ SURGELATO — in freezer, non fresco]',
+            'opened_flag' => '[APERTO]',
+            'whole_pieces' => '[usa PEZZI interi — qty_number in pz, non grammi]',
+            'expires_expired' => '⚠️SCADUTO il {date} (da {days}gg)',
+            'expires_today' => '🔴SCADE OGGI ({date})',
+            'expires_tomorrow' => '🔴SCADE DOMANI ({date})',
+            'expires_soon_high' => '🔴scade {date} (tra {days}gg)',
+            'expires_soon_mid' => '🟠scade {date} (tra {days}gg)',
+            'expires_generic' => 'scade {date} (tra {days}gg)',
+            'freezer_not_urgent' => '[freezer — scadenza lunga, non urgente]',
+            'location_prefix' => 'in',
+            'expired_short' => '⚠️SCADUTO',
+        ],
+        'de' => [
+            'frozen_flag' => '[❄️ TIEFGEKÜHLT — im Gefrierfach, nicht frisch]',
+            'opened_flag' => '[GEÖFFNET]',
+            'whole_pieces' => '[ganze STÜCKE verwenden — qty_number in pz, nicht in Gramm]',
+            'expires_expired' => '⚠️ABGELAUFEN am {date} (seit {days}T)',
+            'expires_today' => '🔴LÄUFT HEUTE AB ({date})',
+            'expires_tomorrow' => '🔴LÄUFT MORGEN AB ({date})',
+            'expires_soon_high' => '🔴läuft am {date} ab (in {days}T)',
+            'expires_soon_mid' => '🟠läuft am {date} ab (in {days}T)',
+            'expires_generic' => 'läuft am {date} ab (in {days}T)',
+            'freezer_not_urgent' => '[Gefrierfach — lange Haltbarkeit, nicht dringend]',
+            'location_prefix' => 'in',
+            'expired_short' => '⚠️ABGELAUFEN',
+        ],
+        'fr' => [
+            'frozen_flag' => '[❄️ SURGELÉ — au congélateur, pas frais]',
+            'opened_flag' => '[OUVERT]',
+            'whole_pieces' => '[utiliser des PIÈCES entières — qty_number en pz, pas en grammes]',
+            'expires_expired' => '⚠️PÉRIMÉ le {date} (depuis {days}j)',
+            'expires_today' => '🔴EXPIRE AUJOURD’HUI ({date})',
+            'expires_tomorrow' => '🔴EXPIRE DEMAIN ({date})',
+            'expires_soon_high' => '🔴expire le {date} (dans {days}j)',
+            'expires_soon_mid' => '🟠expire le {date} (dans {days}j)',
+            'expires_generic' => 'expire le {date} (dans {days}j)',
+            'freezer_not_urgent' => '[congélateur — conservation longue, non urgent]',
+            'location_prefix' => 'dans',
+            'expired_short' => '⚠️PÉRIMÉ',
+        ],
+        'es' => [
+            'frozen_flag' => '[❄️ CONGELADO — en congelador, no fresco]',
+            'opened_flag' => '[ABIERTO]',
+            'whole_pieces' => '[usa PIEZAS enteras — qty_number en pz, no en gramos]',
+            'expires_expired' => '⚠️CADUCADO el {date} (hace {days}d)',
+            'expires_today' => '🔴CADUCA HOY ({date})',
+            'expires_tomorrow' => '🔴CADUCA MAÑANA ({date})',
+            'expires_soon_high' => '🔴caduca el {date} (en {days}d)',
+            'expires_soon_mid' => '🟠caduca el {date} (en {days}d)',
+            'expires_generic' => 'caduca el {date} (en {days}d)',
+            'freezer_not_urgent' => '[congelador — larga conservación, no urgente]',
+            'location_prefix' => 'en',
+            'expired_short' => '⚠️CADUCADO',
+        ],
+        'zh' => [
+            'frozen_flag' => '[❄️ 冷冻 — 在冷冻室，不是冷藏鲜品]',
+            'opened_flag' => '[已开封]',
+            'whole_pieces' => '[使用整件 — qty_number 用 pz，不要用克]',
+            'expires_expired' => '⚠️已过期：{date}（已过 {days} 天）',
+            'expires_today' => '🔴今天到期（{date}）',
+            'expires_tomorrow' => '🔴明天到期（{date}）',
+            'expires_soon_high' => '🔴将于 {date} 到期（{days} 天后）',
+            'expires_soon_mid' => '🟠将于 {date} 到期（{days} 天后）',
+            'expires_generic' => '将于 {date} 到期（{days} 天后）',
+            'freezer_not_urgent' => '[冷冻室 — 保质期较长，不紧急]',
+            'location_prefix' => '在',
+            'expired_short' => '⚠️已过期',
+        ],
+        'en' => [
+            'frozen_flag' => '[❄️ FROZEN — in freezer, not fresh]',
+            'opened_flag' => '[OPENED]',
+            'whole_pieces' => '[use whole PIECES — qty_number in pz, not grams]',
+            'expires_expired' => '⚠️EXPIRED on {date} ({days}d ago)',
+            'expires_today' => '🔴EXPIRES TODAY ({date})',
+            'expires_tomorrow' => '🔴EXPIRES TOMORROW ({date})',
+            'expires_soon_high' => '🔴expires on {date} (in {days}d)',
+            'expires_soon_mid' => '🟠expires on {date} (in {days}d)',
+            'expires_generic' => 'expires on {date} (in {days}d)',
+            'freezer_not_urgent' => '[freezer — long shelf life, not urgent]',
+            'location_prefix' => 'in',
+            'expired_short' => '⚠️EXPIRED',
+        ],
+    ];
+    return $map[$lang] ?? $map['en'];
+}
+
 /** Location / state flags appended to pantry lines sent to the recipe AI. */
-function recipePantryLineExtraFlags(array $item, ?int $expiryGroup = null): string {
+function recipePantryLineExtraFlags(array $item, ?int $expiryGroup = null, string $lang = 'en'): string {
+    $labels = recipeAiLocaleLabels($lang);
     $flags = '';
     $loc = strtolower((string)($item['location'] ?? ''));
     if ($loc === 'freezer') {
-        $flags .= ' [❄️ SURGELATO — in freezer, non fresco]';
+        $flags .= ' ' . $labels['frozen_flag'];
     }
     $qty = (float)($item['quantity'] ?? 0);
     $isOpen = !empty($item['opened_at'])
         || ($qty > 0 && $qty < 1 && ($item['unit'] ?? '') === 'conf');
     if ($isOpen) {
-        $flags .= ' [APERTO]';
+        $flags .= ' ' . $labels['opened_flag'];
     }
     return $flags;
 }
@@ -10006,27 +10100,28 @@ function inventoryExpiryDaysLeftSql(string $expiryCol = 'i.expiry_date'): string
 }
 
 /** Human-readable expiry tag for recipe/chat prompts (always includes the real date). */
-function recipeFormatExpiryLabel(int $daysLeft, ?string $expiryDate): string {
+function recipeFormatExpiryLabel(int $daysLeft, ?string $expiryDate, string $lang = 'en'): string {
+    $labels = recipeAiLocaleLabels($lang);
     $expiryDate = $expiryDate ? trim($expiryDate) : '';
     if ($expiryDate === '') {
         return '';
     }
     if ($daysLeft < 0) {
-        return " ⚠️SCADUTO il {$expiryDate} (da " . abs($daysLeft) . "gg)";
+        return ' ' . str_replace(['{date}', '{days}'], [$expiryDate, (string)abs($daysLeft)], $labels['expires_expired']);
     }
     if ($daysLeft === 0) {
-        return " 🔴SCADE OGGI ({$expiryDate})";
+        return ' ' . str_replace('{date}', $expiryDate, $labels['expires_today']);
     }
     if ($daysLeft === 1) {
-        return " 🔴SCADE DOMANI ({$expiryDate})";
+        return ' ' . str_replace('{date}', $expiryDate, $labels['expires_tomorrow']);
     }
     if ($daysLeft <= 3) {
-        return " 🔴scade {$expiryDate} (tra {$daysLeft}gg)";
+        return ' ' . str_replace(['{date}', '{days}'], [$expiryDate, (string)$daysLeft], $labels['expires_soon_high']);
     }
     if ($daysLeft <= 7) {
-        return " 🟠scade {$expiryDate} (tra {$daysLeft}gg)";
+        return ' ' . str_replace(['{date}', '{days}'], [$expiryDate, (string)$daysLeft], $labels['expires_soon_mid']);
     }
-    return " scade {$expiryDate} (tra {$daysLeft}gg)";
+    return ' ' . str_replace(['{date}', '{days}'], [$expiryDate, (string)$daysLeft], $labels['expires_generic']);
 }
 
 /**
@@ -10060,23 +10155,24 @@ function recipeItemExpiryPriority(array $item): int {
 }
 
 /** Compact pantry line for Gemini (name, qty, location, exact expiry). */
-function recipeBuildPantryLine(array $item, int $group): string {
+function recipeBuildPantryLine(array $item, int $group, string $lang = 'en'): string {
+    $labels = recipeAiLocaleLabels($lang);
     $daysLeft = (int)round((float)($item['days_left'] ?? 999));
     $line = "- {$item['name']}: {$item['quantity']} {$item['unit']}";
     if (($item['unit'] ?? '') === 'conf' && !empty($item['package_unit']) && (float)($item['default_quantity'] ?? 0) > 0) {
         $line .= " ({$item['default_quantity']}{$item['package_unit']}/conf)";
     }
     if (($item['unit'] ?? '') === 'pz') {
-        $line .= ' [usa PEZZI interi — qty_number in pz, non grammi]';
+        $line .= ' ' . $labels['whole_pieces'];
     }
     $loc = trim((string)($item['location'] ?? ''));
     if ($loc !== '') {
         $line .= " @{$loc}";
     }
     if ($group <= 4 && !empty($item['expiry_date'])) {
-        $line .= recipeFormatExpiryLabel($daysLeft, (string)$item['expiry_date']);
+        $line .= recipeFormatExpiryLabel($daysLeft, (string)$item['expiry_date'], $lang);
     }
-    $line .= recipePantryLineExtraFlags($item, $group);
+    $line .= recipePantryLineExtraFlags($item, $group, $lang);
     return $line;
 }
 
@@ -10148,7 +10244,7 @@ function generateRecipe(PDO $db): void {
         if ($group >= 5 && preg_match($staplePatterns, $item['name'])) {
             continue;
         }
-        $priorityGroups[$group][] = recipeBuildPantryLine($item, $group);
+        $priorityGroups[$group][] = recipeBuildPantryLine($item, $group, $lang);
     }
 
     // Build sections: detailed headers for urgent groups, brief for rest
@@ -10647,20 +10743,19 @@ function recipeFromIngredient(PDO $db): void {
     }
 
     $langName = recipeLangName($lang);
+    $aiLabels = recipeAiLocaleLabels($lang);
     $ingredientLines = [];
     foreach ($items as $item) {
         $line = "- {$item['name']}: {$item['quantity']} {$item['unit']}";
         if ($item['unit'] === 'conf' && !empty($item['package_unit']) && $item['default_quantity'] > 0) {
             $line .= " ({$item['default_quantity']}{$item['package_unit']}/conf)";
         }
-        if ($item['unit'] === 'pz') $line .= ' [usa PEZZI interi]';
+        if ($item['unit'] === 'pz') $line .= ' ' . $aiLabels['whole_pieces'];
         $dl = intval($item['days_left']);
         if (!empty($item['expiry_date'])) {
-            if ($dl < 0) $line .= ' ⚠️SCADUTO';
-            elseif ($dl <= 3) $line .= " 🔴{$dl}gg";
-            elseif ($dl <= 7) $line .= " 🟠{$dl}gg";
+            $line .= recipeFormatExpiryLabel($dl, (string)$item['expiry_date'], $lang);
         }
-        $line .= recipePantryLineExtraFlags($item);
+        $line .= recipePantryLineExtraFlags($item, null, $lang);
         $ingredientLines[] = $line;
     }
     $ingredientsText = implode("\n", $ingredientLines);
@@ -10671,15 +10766,15 @@ function recipeFromIngredient(PDO $db): void {
 You are an expert home chef. Generate ONE recipe in {$langName} that uses "{$safeName}" as the main ingredient, for {$persons} person(s).
 Return ONLY a JSON object, no markdown fences.
 
-REGOLE:
-1. La ricetta deve essere eseguibile ORA con SOLO ciò che è in DISPENSA + acqua/sale/pepe/olio. VIETATO includere ingredienti assenti.
-2. "{$safeName}" DEVE essere il primo ingrediente — è obbligatorio includerlo.
-3. Quantità MASSIME per {$persons} persona/e: pasta/riso 90g/pers, carne 150g/pers, affettati/salumi 70g/pers, pesce 180g/pers, legumi secchi 80g/pers, verdure 150g/pers, verdure intere grosse 1 pz/pers, formaggio 70g/pers, piadina/wrap 1-2 pz/pers.
-4. "qty_number": valore NUMERICO nella STESSA unità della dispensa (g/ml/pz/conf). Per unità "pz" usa PEZZI (anche 0.5 = mezzo).
-5. "name": usa ESATTAMENTE il nome dalla lista dispensa (copia-incolla). Tutti gli ingredienti con from_pantry:true.
-6. NON mettere in ingredients nulla che non è in DISPENSA. Se manca un carboidrato usa quello presente in lista.
-6b. COERENZA: ogni alimento nei `steps` deve essere in `ingredients` oppure acqua/sale/pepe/olio. Mai citare burro/panna/uova/latte nei passi se non sono in DISPENSA.
-7. Language: {$langName} for all text fields. Keep "meal" as English meal key (colazione/pranzo/cena/snack/dolce/libero).
+RULES:
+1. The recipe must be executable NOW using ONLY what is in the PANTRY + water/salt/pepper/oil. Do NOT include missing ingredients.
+2. "{$safeName}" MUST be the first ingredient — it is mandatory.
+3. MAX quantities for {$persons} serving(s): pasta/rice 90g per person, meat 150g per person, cured meats 70g per person, fish 180g per person, dry legumes 80g per person, vegetables 150g per person, large whole vegetables 1 piece per person, cheese 70g per person, piadina/wrap 1-2 pieces per person.
+4. "qty_number": NUMERIC value in the SAME pantry unit (g/ml/pz/conf). For unit "pz" use PIECES (0.5 is half a piece).
+5. "name": use the EXACT pantry name (copy-paste). All ingredients must be `from_pantry:true`.
+6. Do NOT put anything in `ingredients` that is not in the PANTRY. If a carb is needed, use one already present in the list.
+6b. CONSISTENCY: every food mentioned in `steps` must also appear in `ingredients`, except water/salt/pepper/oil.
+7. Language: {$langName} for all text fields. Keep "meal" as the meal key (colazione/pranzo/cena/snack/dolce/libero).
 8. `nutrition`: object with estimated macro values PER SERVING for the finished dish: {"kcal":450,"protein_g":25,"carbs_g":40,"fat_g":15}. All values are integers.
 9. `storage`: object describing how to store leftovers: {"where":"frigo","days":3,"tips":"…"}. `where` in target language (frigo / freezer / dispensa / temperatura ambiente). `days` = integer. `tips` = one concise sentence.
 
@@ -10806,7 +10901,7 @@ function generateRecipeStream(PDO $db): void {
             continue;
         }
         // Stream path: annotate groups 1–4 with full dates (not only 1–3)
-        $priorityGroups[$group][] = recipeBuildPantryLine($item, $group);
+        $priorityGroups[$group][] = recipeBuildPantryLine($item, $group, $lang);
     }
 
     // Send the full in-stock list — AI must not invent products outside this list.
@@ -19053,4 +19148,3 @@ function _formatPrice(float $amount, string $currency): string {
     };
     return $sym . number_format($amount, 2, '.', '');
 }
-
