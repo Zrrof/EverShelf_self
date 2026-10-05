@@ -1,7 +1,7 @@
 services:
   evershelf:
-    # Multi-Arch image includes linux/arm64 for Raspberry Pi 5.
-    image: ghcr.io/dadaloop82/evershelf:latest
+    # Built from the German feature branch; includes linux/arm64 for Raspberry Pi 5.
+    image: ghcr.io/zrrof/evershelf:de-german
     platform: linux/arm64
     container_name: evershelf
     ports:
