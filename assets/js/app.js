@@ -1153,13 +1153,14 @@ async function discoverScaleGateway() {
 }
 
 // ===== i18n TRANSLATION SYSTEM =====
-const _I18N_VERSION = '20260910c'; // bump when translations change
+const _I18N_VERSION = '20261005a'; // bump when translations change
 let _i18nStrings = null;   // current language translations (flat)
 let _i18nFallback = null;  // English fallback (flat) — never Italian for other locales
 let _i18nLoadedVersion = null;
-let _currentLang = localStorage.getItem('evershelf_lang') || navigator.language?.slice(0, 2) || 'en';
-const _SUPPORTED_LANGS = { it: 'Italiano', en: 'English', de: 'Deutsch', fr: 'Français', es: 'Español', zh: '简体中文' };
-if (!_SUPPORTED_LANGS[_currentLang]) _currentLang = 'en';
+// EverShelf is intentionally German-only for this installation.
+let _currentLang = 'de';
+localStorage.setItem('evershelf_lang', _currentLang);
+const _SUPPORTED_LANGS = { de: 'Deutsch' };
 
 // Apply theme IMMEDIATELY to prevent flash of unstyled content
 (function _earlyTheme() {
@@ -1303,8 +1304,8 @@ function _populateLanguageSelector() {
 
 // Change language and reload the page
 function changeLanguage(lang) {
-    if (lang === _currentLang) return;
-    localStorage.setItem('evershelf_lang', lang);
+    if (lang !== 'de' || lang === _currentLang) return;
+    localStorage.setItem('evershelf_lang', 'de');
     location.reload();
 }
 
@@ -10212,6 +10213,24 @@ async function _confirmShoppingScanMatch(product) {
 
 async function _finishBarcodeResolved(barcode) {
     showLoading(false);
+    if (_shoppingScanAddMode && currentProduct) {
+        const product = currentProduct;
+        const result = await api('shopping_add', {}, 'POST', {
+            items: [{ name: product.shopping_name || product.name, rawName: product.name, specification: product.brand || '' }],
+            listUUID: shoppingListUUID,
+        }).catch(() => null);
+        if (result?.success) {
+            showToast(t('scan.shopping_add_success').replace('{name}', product.name), 'success');
+            loadShoppingList._bgCall = true;
+            loadShoppingList();
+        } else {
+            showToast(t('scan.shopping_add_error'), 'error');
+        }
+        currentProduct = null;
+        _setScanStatus(t('scan.status_scanning'), '', '');
+        resumeScanner();
+        return;
+    }
     if (_shoppingBoughtFlow && _spesaScanTarget && currentProduct) {
         const ok = await _confirmShoppingScanMatch(currentProduct);
         if (!ok) {
@@ -23773,6 +23792,7 @@ function generateScreensaverFact() {
 
 // ===== SPESA MODE (long-press camera for continuous scanning) =====
 let _spesaMode = false;
+let _shoppingScanAddMode = false;
 let _shoppingBoughtFlow = false;
 let _longPressTimer = null;
 let _spesaSession = []; // { name, qty, unit } per ogni prodotto aggiunto
@@ -23786,6 +23806,17 @@ let _spesaAiFallbackCountdownInterval = null;
 let _spesaAiFallbackModalOpen = false;
 let _spesaAiFallbackCanceled = false;
 let _spesaAiFallbackUsedThisCycle = false;
+
+function toggleShoppingScanAddMode() {
+    _shoppingScanAddMode = !_shoppingScanAddMode;
+    const button = document.getElementById('scan-shopping-add-btn');
+    if (button) {
+        button.classList.toggle('spesa-on', _shoppingScanAddMode);
+        button.setAttribute('aria-pressed', _shoppingScanAddMode ? 'true' : 'false');
+    }
+    showToast(t(_shoppingScanAddMode ? 'scan.shopping_add_mode_on' : 'scan.shopping_add_mode_off'), 'info');
+    if (_shoppingScanAddMode) showPage('scan');
+}
 
 function _spesaScanUiBlocked() {
     if (_spesaSpendModalOpen) return true;

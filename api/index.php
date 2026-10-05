@@ -8100,6 +8100,15 @@ function geminiModelUnavailable(int $httpCode, ?array $data): bool {
  * @param string $tier 'default' | 'lite'
  */
 function callGeminiWithFallback(string $apiKey, array $payload, int $timeout = 30, string $usageAction = '', string $tier = 'default'): array {
+    // All AI providers, including OpenAI-compatible local models, must answer in German.
+    $languageRule = 'ANTWORTE IMMER AUF DEUTSCH. Alle Erklärungen, Namen und sonstigen Textwerte müssen Deutsch sein. Behalte ein vom Aufrufer verlangtes Datenformat, insbesondere JSON, unverändert bei; übersetze dabei ausschließlich die Textinhalte.';
+    $existingInstruction = $payload['systemInstruction']['parts'][0]['text']
+        ?? $payload['system_instruction']['parts'][0]['text']
+        ?? '';
+    $payload['systemInstruction'] = [
+        'parts' => [['text' => $languageRule . ($existingInstruction !== '' ? "\n\n" . $existingInstruction : '')]],
+    ];
+    unset($payload['system_instruction']);
     $payload = geminiEnsureNoThinking($payload);
 
     if (!aiIsEnabled()) {
