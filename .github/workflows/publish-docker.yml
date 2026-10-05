@@ -2,7 +2,7 @@ name: Publish Docker Image
 
 on:
   push:
-    branches: [main]
+    branches: [main, copilot/feature-new-update]
     tags: ['v*']
   workflow_dispatch:
 
@@ -45,6 +45,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=sha-,format=short
             type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=raw,value=de-german,enable=${{ github.ref == 'refs/heads/copilot/feature-new-update' }}
 
       - name: Build and push
         uses: docker/build-push-action@v6

@@ -1,7 +1,7 @@
 services:
   evershelf:
-    # Multi-Arch image includes linux/arm64 for Raspberry Pi 5.
-    image: ghcr.io/dadaloop82/evershelf:latest
+    # The GitHub Actions workflow publishes this multi-arch image from main.
+    image: ghcr.io/zrrof/evershelf:latest
     platform: linux/arm64
     container_name: evershelf
     ports:
