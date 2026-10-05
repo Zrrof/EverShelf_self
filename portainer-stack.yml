@@ -1,0 +1,17 @@
+services:
+  evershelf:
+    # Multi-Arch image includes linux/arm64 for Raspberry Pi 5.
+    image: ghcr.io/dadaloop82/evershelf:latest
+    platform: linux/arm64
+    container_name: evershelf
+    ports:
+      - "8080:80"
+    volumes:
+      - evershelf_data:/var/www/html/data
+    environment:
+      TZ: Europe/Berlin
+    restart: unless-stopped
+
+volumes:
+  evershelf_data:
+    driver: local
