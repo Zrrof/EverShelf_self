@@ -1551,7 +1551,8 @@
         "ghost_restored": "✅ {name}: {qty} {unit} im Bestand wiederhergestellt",
         "appliance_added": "Gerät hinzugefügt",
         "item_added": "{name} hinzugefügt",
-        "finished_to_shopping": "🛒 Produkt aufgebraucht → zur Einkaufsliste hinzugefügt"
+        "finished_to_shopping": "🛒 Produkt aufgebraucht → zur Einkaufsliste hinzugefügt",
+        "expiry_extended": "Ablaufdatum um {n} Tage verlängert → {date}"
     },
     "antiwaste": {
         "title": "🌱 Anti-Verschwendungs-Bericht",

@@ -36,6 +36,9 @@ jobs:
         run: |
           node -c assets/js/app.js
 
+      - name: Run application smoke tests
+        run: npm test
+
   docker-build:
     name: Docker Build Test
     runs-on: ubuntu-latest

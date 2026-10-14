@@ -171,6 +171,40 @@ button {
 .bottom-nav .nav-btn.active { color: #e5a900; }
 .bottom-nav .nav-icon { font-size: 1.55rem; }
 
+/* Reference layout: centered mobile headers, yellow divider and generous cards. */
+#page-inventory .page-header,
+#page-shopping .page-header,
+#page-scan .page-header {
+    border-bottom: 3px solid #f5b900;
+    margin: calc(var(--es-space-md) * -1) calc(var(--es-space-lg) * -1) var(--es-space-md);
+    padding: 14px var(--es-space-lg) 12px;
+}
+#page-inventory .page-header h2,
+#page-shopping .page-header h2,
+#page-scan .page-header h2 {
+    flex: 1;
+    text-align: center;
+    font-size: clamp(1.45rem, 5vw, 2rem);
+}
+#page-inventory .category-header {
+    color: #202020;
+    text-transform: none;
+    letter-spacing: 0;
+    font-size: 1.45rem;
+    padding-top: 18px;
+}
+#page-inventory .inventory-item,
+#page-shopping .shopping-item,
+#page-shopping .shopping-item-card {
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(0,0,0,.10);
+}
+#page-inventory .inv-row-content { min-height: 92px; padding: 16px; }
+#page-shopping .shopping-item { margin-bottom: 12px; }
+#page-scan .scanner-viewport { min-height: min(64vh, 620px); border-radius: 0 0 24px 24px; }
+#page-scan .scan-input-panel { margin-top: -8px; position: relative; z-index: 2; }
+
 @media (max-width: 560px) {
     .dashboard-primary-actions { grid-template-columns: 1fr; }
     .dashboard-primary-actions .btn { width: 100%; }
