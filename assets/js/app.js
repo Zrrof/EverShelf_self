@@ -6113,6 +6113,7 @@ function _applyInsightPhase() {
 
 // ===== DASHBOARD =====
 async function loadDashboard() {
+    const requestId = ++loadDashboard._requestId;
     // Show shimmer on stat cards while loading
     ['stat-dispensa', 'stat-frigo', 'stat-freezer'].forEach(id => {
         const el = document.getElementById(id);
@@ -6124,6 +6125,7 @@ async function loadDashboard() {
             api('inventory_summary'),
             api('stats')
         ]);
+        if (requestId !== loadDashboard._requestId) return;
         
         // Update stat cards
         const summary = summaryData.summary || [];
@@ -6376,6 +6378,7 @@ async function loadDashboard() {
         });
     }
 }
+loadDashboard._requestId = 0;
 
 function openedFraction(item) {
     const qty = parseFloat(item.quantity);
@@ -14780,8 +14783,10 @@ async function _pfAiFillFromMatch(idx) {
 
 // ===== ALL PRODUCTS =====
 async function loadAllProducts() {
+    const requestId = ++loadAllProducts._requestId;
     try {
         const data = await api('products_list');
+        if (requestId !== loadAllProducts._requestId || data?.success === false) return;
         renderProductsList(data.products || []);
     } catch (err) {
         console.error(err);
@@ -14795,9 +14800,12 @@ async function searchAllProducts() {
         loadAllProducts();
         return;
     }
+    const requestId = ++loadAllProducts._requestId;
     const data = await api('products_search', { q });
+    if (requestId !== loadAllProducts._requestId || data?.success === false) return;
     renderProductsList(data.products || []);
 }
+loadAllProducts._requestId = 0;
 
 function renderProductsList(products) {
     const container = document.getElementById('products-list');
@@ -17041,6 +17049,7 @@ async function loadShoppingList() {
         statusEl.innerHTML = `<div class="bring-error">${t('error.bring_connection')}</div>`;
     }
 }
+loadShoppingList._requestId = 0;
 
 /** Return the spec text to show in the UI, stripping urgency markers (those are shown as badges). */
 function _specDisplayText(spec) {
@@ -23846,8 +23855,6 @@ function toggleShoppingScanAddMode() {
     showToast(t(_shoppingScanAddMode ? 'scan.shopping_add_mode_on' : 'scan.shopping_add_mode_off'), 'info');
     if (_shoppingScanAddMode) showPage('scan');
 }
-loadShoppingList._requestId = 0;
-
 function _updateInventoryModeBanner() {
     const banner = document.getElementById('inventory-mode-banner');
     if (!banner) return;
