@@ -1,6 +1,6 @@
 services:
   evershelf:
-    # Pin the verified build so an older concurrent workflow cannot replace it.
+    # Always deploy the latest image published by the main-branch workflow.
     image: ghcr.io/zrrof/evershelf:latest
     platform: linux/arm64
     container_name: evershelf
