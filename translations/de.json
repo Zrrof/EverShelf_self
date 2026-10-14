@@ -12,7 +12,8 @@
         "shopping": "Einkauf",
         "spend": "Ausgaben",
         "log": "Verlauf",
-        "settings": "Einstellungen"
+        "settings": "Einstellungen",
+        "more": "Mehr"
     },
     "btn": {
         "back": "← Zurück",
@@ -636,6 +637,11 @@
         "suggestions_add": "✅ Ausgewählte zu Bring! hinzufügen",
         "search_prices": "🔍 Alle Preise suchen",
         "suggest_btn": "Einkaufsvorschläge",
+        "manual_add_btn": "➕ Artikel hinzufügen",
+        "manual_add_prompt": "Was möchtest du zur Einkaufsliste hinzufügen?",
+        "manual_add_success": "Artikel zur Einkaufsliste hinzugefügt",
+        "manual_add_error": "Artikel konnte nicht hinzugefügt werden",
+        "scan_add_btn": "📷 Barcode scannen",
         "smart_title": "🧠 Intelligente Vorhersagen",
         "smart_empty": "Keine Vorhersagen verfügbar.<br>Füge Produkte zur Vorratskammer hinzu, um intelligente Vorhersagen zu erhalten.",
         "smart_filter_all": "Alle",

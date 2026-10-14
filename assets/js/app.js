@@ -5203,6 +5203,9 @@ function showPage(pageId, param = null, options = {}) {
 
     _currentPageId = pageId;
     _currentPageParam = param;
+    const moreMenu = document.getElementById('nav-more-menu');
+    if (moreMenu) moreMenu.hidden = true;
+    document.getElementById('nav-more-btn')?.setAttribute('aria-expanded', 'false');
     // Hide all pages
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     // Show target page
@@ -6377,6 +6380,20 @@ async function loadDashboard() {
             if (el) { el.classList.remove('stat-loading'); if (el.textContent === '') el.textContent = '-'; }
         });
     }
+}
+
+function toggleMoreNav() {
+    const menu = document.getElementById('nav-more-menu');
+    const button = document.getElementById('nav-more-btn');
+    if (!menu) return;
+    const isOpen = menu.hidden;
+    menu.hidden = !isOpen;
+    button?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+}
+
+function openMorePage(pageId) {
+    toggleMoreNav();
+    showPage(pageId);
 }
 loadDashboard._requestId = 0;
 
@@ -7959,9 +7976,18 @@ async function loadInventory() {
             currentLocation ? api('inventory_list', {}) : null,
         ]);
         if (requestId !== loadInventory._requestId) return;
-        currentInventory = _inventoryVisibleItems(locData.inventory || []);
+        // A rate-limit response is a JSON error without an inventory array. Never
+        // replace the visible pantry with an empty list in that case.
+        const locationItems = Array.isArray(locData?.inventory) ? locData.inventory : null;
+        const allItems = currentLocation
+            ? (Array.isArray(allData?.inventory) ? allData.inventory : null)
+            : locationItems;
+        if (!locationItems || (currentLocation && !allItems)) {
+            throw new Error(locData?.error || allData?.error || 'inventory_unavailable');
+        }
+        currentInventory = _inventoryVisibleItems(locationItems);
         _allInventoryCache = currentLocation
-            ? _inventoryVisibleItems(allData?.inventory || [])
+            ? _inventoryVisibleItems(allItems)
             : currentInventory;
         const q = (_inventorySearchQuery || document.getElementById('inventory-search')?.value || '').trim();
         if (q) {
@@ -7972,6 +7998,18 @@ async function loadInventory() {
         loadQuickAccess();
     } catch (err) {
         console.error('Inventory load error:', err);
+        // Keep the last known inventory visible when the API is temporarily
+        // unavailable (including HTTP 429 responses).
+        const cached = _offlineCacheGet();
+        if (Array.isArray(cached) && cached.length) {
+            const visible = currentLocation ? cached.filter(item => item.location === currentLocation) : cached;
+            currentInventory = _inventoryVisibleItems(visible);
+            _allInventoryCache = _inventoryVisibleItems(cached);
+            const q = (_inventorySearchQuery || document.getElementById('inventory-search')?.value || '').trim();
+            if (q) filterInventory(); else renderInventory(currentInventory);
+            loadQuickAccess();
+            showToast(t('inventory.offline_cached') || 'Bestand aus dem lokalen Cache angezeigt', 'info');
+        }
     }
 }
 loadInventory._requestId = 0;
@@ -17749,6 +17787,8 @@ async function saveShoppingTemplate(id) {
 }
 
 async function generateSuggestions() {
+    if (generateSuggestions._busy) return;
+    generateSuggestions._busy = true;
     const btn = document.getElementById('btn-suggest');
     const suggestionsEl = document.getElementById('shopping-suggestions');
     
@@ -17805,7 +17845,32 @@ async function generateSuggestions() {
         btn.innerHTML = `🤖 ${t('shopping.suggest_btn').replace('🤖 ', '')}`;
         console.error('Suggestion error:', err);
         showToast(t('error.connection'), 'error');
+    } finally {
+        generateSuggestions._busy = false;
     }
+}
+generateSuggestions._busy = false;
+
+async function addManualShoppingItem() {
+    const value = window.prompt(t('shopping.manual_add_prompt') || 'Was möchtest du zur Einkaufsliste hinzufügen?');
+    const name = (value || '').trim();
+    if (!name) return;
+    const result = await api('shopping_add', {}, 'POST', {
+        items: [{ name, rawName: name, specification: '' }],
+        listUUID: shoppingListUUID,
+    }).catch(() => null);
+    if (result?.success) {
+        showToast(t('shopping.manual_add_success') || 'Artikel hinzugefügt', 'success');
+        loadShoppingList._bgCall = true;
+        await loadShoppingList();
+    } else {
+        showToast(result?.error || t('shopping.manual_add_error') || 'Artikel konnte nicht hinzugefügt werden', 'error');
+    }
+}
+
+function openShoppingBarcodeScanner() {
+    if (!_shoppingScanAddMode) toggleShoppingScanAddMode();
+    else showPage('scan');
 }
 
 function renderSuggestions() {

@@ -704,7 +704,7 @@ if (($_GET['action'] ?? '') === 'health_check') {
 // ===== RATE LIMITING =====
 /**
  * Simple file-based rate limiter.
- * Limits: 120 req/min general, 15 req/min for AI endpoints, 5 req/min for login.
+ * Limits: 600 req/min general, 45 req/min for AI endpoints, 5 req/min for login.
  */
 function checkRateLimit(string $action): void {
     $rateLimitDir = __DIR__ . '/../data/rate_limits';
@@ -713,19 +713,19 @@ function checkRateLimit(string $action): void {
     }
 
     // Determine limit based on action
-    $aiActions = ['gemini_readExpiry', 'gemini_chat', 'gemini_identify', 'gemini_suggest_shopping', 'chat_to_recipe', 'recipe_from_ingredient', 'gemini_number_ocr', 'gemini_barcode_visual'];
+    $aiActions = ['gemini_readExpiry', 'gemini_chat', 'gemini_identify', 'gemini_suggest_shopping', 'gemini_shopping_enrich', 'chat_to_recipe', 'recipe_from_ingredient', 'gemini_number_ocr', 'gemini_barcode_visual'];
     $loginActions = [];
     $recipeActions = ['generate_recipe', 'generate_recipe_stream'];
     $errorActions = ['report_error', 'check_update'];
     $priceActions = ['get_shopping_price', 'get_all_shopping_prices'];
 
     if (in_array($action, $aiActions)) {
-        $limit = 15;
+        $limit = 45;
         $window = 60;
         $bucket = 'ai';
     } elseif (in_array($action, $priceActions)) {
         // Price lookups: up to 30 items × a few retries per minute, shared bucket
-        $limit = 60;
+        $limit = 180;
         $window = 60;
         $bucket = 'price';
     } elseif (in_array($action, $recipeActions)) {
@@ -741,7 +741,7 @@ function checkRateLimit(string $action): void {
         $window = 60;
         $bucket = 'login';
     } else {
-        $limit = 120;
+        $limit = 600;
         $window = 60;
         $bucket = 'general';
     }

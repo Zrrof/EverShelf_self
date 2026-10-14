@@ -124,10 +124,6 @@
                     <span class="scale-status-dot"></span>
                 </span>
             </button>
-            <button class="header-btn header-spesa-btn" id="btn-header-spesa"
-                    onclick="toggleSpesaMode()"
-                    data-i18n-title="scan.spesa_quick_hint" data-i18n-aria="scan.spesa_quick_hint"
-                    title="Shopping mode" aria-label="Shopping mode" aria-pressed="false">🛒</button>
             <button class="header-btn header-scan-btn" id="btn-header-scan"
                     data-i18n-title="scan.hint_short" title="Scan product">
                 📷
@@ -830,6 +826,12 @@
                     </div>
                 </div>
                 <div class="shopping-actions">
+                    <button class="btn btn-secondary" onclick="addManualShoppingItem()" data-i18n="shopping.manual_add_btn">
+                        ➕ Artikel hinzufügen
+                    </button>
+                    <button class="btn btn-secondary" onclick="openShoppingBarcodeScanner()" data-i18n="shopping.scan_add_btn">
+                        📷 Barcode scannen
+                    </button>
                     <button class="btn btn-large btn-accent" onclick="generateSuggestions()" id="btn-suggest" data-i18n="shopping.suggest_btn">
                         Suggerisci cosa comprare
                     </button>
@@ -2152,10 +2154,6 @@
         <span class="nav-icon">📋</span>
         <span class="nav-label" data-i18n="nav.inventory">Dispensa</span>
     </button>
-    <button class="nav-btn" onclick="showPage('recipe')" data-page="recipe">
-        <span class="nav-icon">🍳</span>
-        <span class="nav-label" data-i18n="nav.recipes">Ricette</span>
-    </button>
     <button class="nav-btn nav-gemini-btn" id="nav-gemini-btn" onclick="_openGeminiChat()" data-page="chat"
             title="Gemini Chef" data-i18n-title="chat.title">
         <span class="nav-gemini-icon-wrap" aria-hidden="true">
@@ -2171,15 +2169,16 @@
         <span class="nav-icon">💶</span>
         <span class="nav-label" data-i18n="nav.spend">Ausgaben</span>
     </button>
-    <button class="nav-btn" onclick="showPage('log')" data-page="log">
-        <span class="nav-icon">📋</span>
-        <span class="nav-label" data-i18n="nav.log">Storico</span>
-    </button>
-    <button class="nav-btn" onclick="showPage('settings')" data-page="settings">
-        <span class="nav-icon">⚙️</span>
-        <span class="nav-label" data-i18n="nav.settings">Config</span>
+    <button class="nav-btn nav-more-btn" id="nav-more-btn" onclick="toggleMoreNav()" aria-expanded="false" aria-controls="nav-more-menu">
+        <span class="nav-icon">☰</span>
+        <span class="nav-label" data-i18n="nav.more">Mehr</span>
     </button>
 </nav>
+<div class="nav-more-menu" id="nav-more-menu" hidden>
+    <button type="button" onclick="openMorePage('recipe')"><span>🍳</span><span data-i18n="nav.recipes">Rezepte</span></button>
+    <button type="button" onclick="openMorePage('log')"><span>📋</span><span data-i18n="nav.log">Verlauf</span></button>
+    <button type="button" onclick="openMorePage('settings')"><span>⚙️</span><span data-i18n="nav.settings">Einstellungen</span></button>
+</div>
 
 <!-- Recipe Dialog -->
 <div class="modal-overlay" id="recipe-overlay" style="display:none" onclick="closeRecipeDialog()">
