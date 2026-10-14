@@ -2488,6 +2488,7 @@ function clearProductsSearch() {
 }
 let _actionInventoryItems = [];
 let currentLocation = '';
+let _inventoryFilterMode = 'all';
 let scannerStream = null;
 let quaggaRunning = false;
 let aiStream = null;
@@ -8507,18 +8508,41 @@ function filterLocation(loc) {
     loadInventory();
 }
 
+function setInventoryFilter(mode) {
+    _inventoryFilterMode = mode || 'all';
+    document.querySelectorAll('.inventory-filter').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === _inventoryFilterMode);
+    });
+    filterInventory();
+}
+
+function _inventoryMatchesFilter(item) {
+    if (_inventoryFilterMode === 'all') return true;
+    if (_inventoryFilterMode === 'unlocated') return !String(item.location || '').trim();
+    const days = item.expiry_date ? daysUntilExpiry(item.expiry_date) : null;
+    if (_inventoryFilterMode === 'expired') return days !== null && days < 0;
+    if (_inventoryFilterMode === 'expiring') return days !== null && days >= 0 && days <= 7;
+    if (_inventoryFilterMode === 'low') {
+        const qty = Number(item.quantity || 0);
+        const minimum = Number(item.minimum_stock ?? item.min_stock ?? 0);
+        return qty <= (minimum > 0 ? minimum : 0.001);
+    }
+    return true;
+}
+
 function filterInventory() {
     _rememberInventorySearchFromInput();
     const q = (_inventorySearchQuery || '').toLowerCase().trim();
     const qas = document.getElementById('quick-access-section');
     if (!q) {
         if (qas) qas.style.display = '';
-        renderInventory(currentInventory);
+        renderInventory(currentInventory.filter(_inventoryMatchesFilter));
         return;
     }
     if (qas) qas.style.display = 'none';
 
-    const pool = _inventoryVisibleItems(_allInventoryCache.length ? _allInventoryCache : currentInventory);
+    const pool = _inventoryVisibleItems(_allInventoryCache.length ? _allInventoryCache : currentInventory)
+        .filter(_inventoryMatchesFilter);
     const scored = pool.map(item => ({ item, score: _inventorySearchScore(item, q) }));
     let matched = scored.filter(s => s.score >= 15);
 

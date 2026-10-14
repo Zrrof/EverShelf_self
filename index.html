@@ -168,6 +168,16 @@
             </div>
         </div>
 
+        <div class="dashboard-primary-actions" aria-label="Schnellaktionen">
+            <button class="btn btn-primary" onclick="showPage('scan')" data-i18n="dashboard.scan_action">📷 Produkt scannen</button>
+            <button class="btn btn-secondary" onclick="showPage('add')" data-i18n="dashboard.manual_action">➕ Manuell hinzufügen</button>
+            <button class="btn btn-secondary" onclick="showPage('shopping')" data-i18n="dashboard.shopping_action">🛒 Einkaufsliste</button>
+        </div>
+        <div class="dashboard-extension-actions" aria-label="Erweiterungen">
+            <button class="dashboard-extension-card" onclick="showPage('chat')"><span>✨</span><strong data-i18n="dashboard.ai_action">KI-Assistent</strong><small data-i18n="dashboard.ai_action_hint">Fragen zu deinem Vorrat</small></button>
+            <button class="dashboard-extension-card" onclick="showPage('recipe')"><span>🍳</span><strong data-i18n="dashboard.recipe_action">Rezepte</strong><small data-i18n="dashboard.recipe_action_hint">Mit deinen Zutaten kochen</small></button>
+        </div>
+
         <!-- Top notification banner (anomalous qty + consumption predictions) -->
         <div id="alert-banner" class="alert-banner" style="display:none">
             <div class="alert-banner-inner">
@@ -241,6 +251,13 @@
             <input type="text" id="inventory-search" placeholder="🔍 Cerca prodotto..." oninput="filterInventory()" data-i18n-placeholder="inventory.search_placeholder" autocomplete="off">
             <button type="button" class="search-clear-btn" id="inventory-search-clear" onclick="clearInventorySearch()" hidden aria-label="Cancella ricerca" data-i18n-aria="inventory.clear_search" data-i18n-title="inventory.clear_search" title="Cancella ricerca">×</button>
         </div>
+        <div class="inventory-filter-row" id="inventory-filter-row" aria-label="Bestandsfilter">
+            <button type="button" class="inventory-filter active" data-filter="all" onclick="setInventoryFilter('all')" data-i18n="inventory.filter_all">Alle</button>
+            <button type="button" class="inventory-filter" data-filter="expiring" onclick="setInventoryFilter('expiring')" data-i18n="inventory.filter_expiring">Bald fällig</button>
+            <button type="button" class="inventory-filter" data-filter="expired" onclick="setInventoryFilter('expired')" data-i18n="inventory.filter_expired">Abgelaufen</button>
+            <button type="button" class="inventory-filter" data-filter="low" onclick="setInventoryFilter('low')" data-i18n="inventory.filter_low">Wenig Bestand</button>
+            <button type="button" class="inventory-filter" data-filter="unlocated" onclick="setInventoryFilter('unlocated')" data-i18n="inventory.filter_unlocated">Ohne Lagerort</button>
+        </div>
         <!-- Quick access: recent & popular products -->
         <div id="quick-access-section" style="display:none">
             <div class="quick-access-group" id="quick-recent-group" style="display:none">
@@ -253,6 +270,10 @@
             </div>
         </div>
         <div class="inventory-list" id="inventory-list"></div>
+        <div class="inventory-floating-actions" aria-label="Produkte hinzufügen">
+            <button type="button" class="inventory-fab inventory-fab-manual" onclick="showPage('add')" data-i18n-title="inventory.manual_add" title="Manuell hinzufügen">✎</button>
+            <button type="button" class="inventory-fab inventory-fab-scan" onclick="showPage('scan')" data-i18n-title="inventory.scan_add" title="Barcode scannen">▦</button>
+        </div>
     </section>
 
     <!-- ===== SCAN PAGE ===== -->
@@ -270,6 +291,7 @@
             </div>
             <button class="btn btn-small" onclick="endSpesaMode()" data-i18n="scan.mode_shopping_end">✅ Fine</button>
         </div>
+
         <div class="spesa-mode-banner" id="inventory-mode-banner" style="display:none">
             <div class="spesa-banner-left">
                 <span data-i18n="scan.inventory_mode_active">📦 Inventarmodus</span>
@@ -764,6 +786,14 @@
         <div class="shopping-container">
             <div class="bring-status" id="bring-status">
                 <div class="bring-loading" data-i18n="shopping.bring_loading">Connessione a Bring!...</div>
+            </div>
+
+            <div class="shopping-entry-bar">
+                <button type="button" class="shopping-entry-button" onclick="addManualShoppingItem()">
+                    <span class="shopping-entry-search">⌕</span>
+                    <span data-i18n="shopping.manual_add_btn">Produkt hinzufügen</span>
+                </button>
+                <button type="button" class="shopping-entry-scan" onclick="openShoppingBarcodeScanner()" data-i18n-title="shopping.scan_add_btn" title="Barcode scannen">▦</button>
             </div>
 
             <!-- Tab navigation -->
@@ -2154,20 +2184,13 @@
         <span class="nav-icon">📋</span>
         <span class="nav-label" data-i18n="nav.inventory">Dispensa</span>
     </button>
-    <button class="nav-btn nav-gemini-btn" id="nav-gemini-btn" onclick="_openGeminiChat()" data-page="chat"
-            title="Gemini Chef" data-i18n-title="chat.title">
-        <span class="nav-gemini-icon-wrap" aria-hidden="true">
-            <svg class="nav-gemini-icon" viewBox="0 0 24 24" width="26" height="26" fill="white"><path d="M12 0C12 6.627 6.627 12 0 12c6.627 0 12 5.373 12 12 0-6.627 5.373 12 12-12-6.627 0-12-5.373-12-12z"/></svg>
-        </span>
-        <span class="nav-label" data-i18n="nav.gemini">Gemini</span>
-    </button>
     <button class="nav-btn" onclick="showPage('shopping')" data-page="shopping">
         <span class="nav-icon">🛒</span>
         <span class="nav-label" data-i18n="nav.shopping">Spesa</span>
     </button>
-    <button class="nav-btn" onclick="showPage('spend')" data-page="spend">
-        <span class="nav-icon">💶</span>
-        <span class="nav-label" data-i18n="nav.spend">Ausgaben</span>
+    <button class="nav-btn" onclick="showPage('settings')" data-page="settings">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label" data-i18n="nav.settings">Einstellungen</span>
     </button>
     <button class="nav-btn nav-more-btn" id="nav-more-btn" onclick="toggleMoreNav()" aria-expanded="false" aria-controls="nav-more-menu">
         <span class="nav-icon">☰</span>
@@ -2175,9 +2198,10 @@
     </button>
 </nav>
 <div class="nav-more-menu" id="nav-more-menu" hidden>
+    <button type="button" onclick="openMorePage('chat')"><span>✨</span><span data-i18n="nav.gemini">KI-Assistent</span></button>
     <button type="button" onclick="openMorePage('recipe')"><span>🍳</span><span data-i18n="nav.recipes">Rezepte</span></button>
+    <button type="button" onclick="openMorePage('spend')"><span>💶</span><span data-i18n="nav.spend">Ausgaben</span></button>
     <button type="button" onclick="openMorePage('log')"><span>📋</span><span data-i18n="nav.log">Verlauf</span></button>
-    <button type="button" onclick="openMorePage('settings')"><span>⚙️</span><span data-i18n="nav.settings">Einstellungen</span></button>
 </div>
 
 <!-- Recipe Dialog -->
@@ -2347,3 +2371,5 @@
 <script src="assets/js/app.js?v=20261014a"></script>
 </body>
 </html>
+
+
