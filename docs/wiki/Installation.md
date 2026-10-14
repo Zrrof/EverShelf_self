@@ -18,12 +18,12 @@ EverShelf runs on any server with PHP 8.0+ and SQLite. Docker is the recommended
 
 ## Option A: Docker (recommended)
 
-The fastest way to get started. Pre-built multi-arch images (`amd64` / `arm64`) are published to **GHCR**: `ghcr.io/dadaloop82/evershelf`.
+The fastest way to get started. Pre-built multi-arch images (`amd64` / `arm64`) are published to **GHCR**: `ghcr.io/zrrof/evershelf`.
 
 ```bash
 # 1. Clone the repository (compose file + .env.example)
-git clone https://github.com/dadaloop82/EverShelf.git
-cd EverShelf
+git clone https://github.com/Zrrof/EverShelf_self.git
+cd EverShelf_self
 
 # 2. Create your configuration
 cp .env.example .env
