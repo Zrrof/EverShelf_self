@@ -1,7 +1,7 @@
 services:
   evershelf:
-    # The GitHub Actions workflow publishes this multi-arch image from main.
-    image: ghcr.io/zrrof/evershelf:latest
+    # Pin the verified build so an older concurrent workflow cannot replace it.
+    image: ghcr.io/zrrof/evershelf:sha-30e6b26
     platform: linux/arm64
     container_name: evershelf
     ports:
