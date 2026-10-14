@@ -15236,7 +15236,7 @@ function smartShoppingCached(PDO $db): void {
             $raw = file_get_contents($cacheFile);
             if ($raw !== false) {
                 $data = json_decode($raw, true);
-                if ($data && isset($data['success']) && (int)($data['plan_days'] ?? -1) === $planDays) {
+                if ($data && isset($data['success']) && !empty($data['empty_stock_only']) && (int)($data['plan_days'] ?? -1) === $planDays) {
                     $data['cache_age_seconds'] = time() - ($data['cached_ts'] ?? $mtime);
                     $data['items'] = smartShoppingFilterPurchased($db, $data['items'] ?? []);
                     $data['plan_days_default'] = smartDefaultPlanDays($db);
@@ -15252,6 +15252,8 @@ function smartShoppingCached(PDO $db): void {
     $json = ob_get_clean();
     $decoded = json_decode($json, true);
     if ($decoded && !empty($decoded['success'])) {
+        // Mark the cache schema so older caches containing low-stock items are rebuilt.
+        $decoded['empty_stock_only'] = true;
         $decoded['cached_ts'] = time();
         $decoded['cached_at'] = date('c');
         @file_put_contents($cacheFile, json_encode($decoded, JSON_UNESCAPED_UNICODE));
@@ -16489,6 +16491,11 @@ function bringSuggestItems(PDO $db): void {
         $data = json_decode($raw, true);
         $smartItems = $data['items'] ?? [];
     }
+    // Keep Bring suggestions aligned with the empty-stock smart-shopping rule,
+    // including when an older cache file is still present.
+    $smartItems = array_values(array_filter($smartItems, static function ($item): bool {
+        return (float)($item['current_qty'] ?? $item['quantity'] ?? 0) <= 0;
+    }));
 
     // 2. Get Bring! listUUID for response
     $listUUID = '';
