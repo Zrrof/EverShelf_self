@@ -15518,34 +15518,9 @@ function _filterPurchasedSmartItems(items) {
 }
 
 async function autoAddCriticalItems() {
-    // Time-based guard: run at most once every 5 minutes
-    const lastRun = parseInt(localStorage.getItem('_autoAddedCriticalTs') || '0');
-    if (Date.now() - lastRun < 5 * 60 * 1000) return;
-    localStorage.setItem('_autoAddedCriticalTs', String(Date.now()));
-    const toAdd = smartShoppingItems.filter(i => {
-        if (i.on_bring) return false;
-        const gName = i.shopping_name || i.name;
-        if (_isBringPurchased(gName, i.urgency)) return false;
-        if (['critical', 'high'].includes(i.urgency)) return true;
-        // Depleted food must land on the list unless the user blocked it
-        const qty = parseFloat(i.current_qty ?? i.quantity ?? 0);
-        return qty <= 0.001 && ['medium', 'low'].includes(i.urgency);
-    });
-    if (toAdd.length === 0) return;
-    const itemsToAdd = toAdd.map(i => ({
-        name: i.shopping_name || i.name,
-        specification: _urgencyToSpec(i.urgency),
-    }));
-    try {
-        const result = await api('shopping_add', {}, 'POST', { items: itemsToAdd, listUUID: shoppingListUUID });
-        if (result.success && result.added > 0) {
-            // Track these as auto-added so cleanupObsoleteBringItems can safely remove them later
-            _markAutoAddedBring(itemsToAdd.map(i => i.name));
-            showToast(t('shopping.add_urgent_toast', { n: result.added }), 'success');
-            logOperation('bring_auto_add', { added: itemsToAdd.map(i => i.name) });
-            loadShoppingList();
-        }
-    } catch (e) { /* ignore */ }
+    // Shopping suggestions are informational only. Adding anything requires an
+    // explicit click or a deliberate barcode scan by the user.
+    return;
 }
 
 /**
@@ -23546,35 +23521,8 @@ async function loadScreensaverData() {
  * automatically after the add. Rate-limited to once per 30 minutes per session.
  */
 async function _screensaverAutoAddItems() {
-    const RATE_MS = 30 * 60 * 1000;
-    const lastRun = parseInt(sessionStorage.getItem('_ssAutoAddTs') || '0');
-    if (Date.now() - lastRun < RATE_MS) return;
-
-    const toAdd = smartShoppingItems.filter(i => {
-        if (i.on_bring) return false;
-        const gName = i.shopping_name || i.name;
-        if (_isBringPurchased(gName, i.urgency)) return false;
-        if (i.urgency === 'critical' || i.urgency === 'high') return true;
-        const qty = parseFloat(i.current_qty ?? i.quantity ?? 0);
-        return qty <= 0.001 && (i.urgency === 'medium' || i.urgency === 'low');
-    });
-    if (toAdd.length === 0) return;
-
-    sessionStorage.setItem('_ssAutoAddTs', String(Date.now()));
-    const itemsToAdd = toAdd.map(i => ({
-        name: i.shopping_name || i.name,
-        specification: _urgencyToSpec(i.urgency),
-    }));
-    try {
-        const result = await api('shopping_add', {}, 'POST', { items: itemsToAdd, listUUID: shoppingListUUID });
-        if (result.success && result.added > 0) {
-            _markAutoAddedBring(itemsToAdd.map(i => i.name));
-            logOperation('bring_auto_add_screensaver', { added: itemsToAdd.map(i => i.name) });
-            // Refresh bring list silently then update screensaver counter
-            loadShoppingList._bgCall = true;
-            loadShoppingList().then(() => syncShoppingPriceTotal(false));
-        }
-    } catch (e) { /* ignore */ }
+    // Never modify the shopping list from a background/screensaver task.
+    return;
 }
 
 // Show next random fact with fade in/out
@@ -25516,10 +25464,9 @@ async function _backgroundBringSync() {
             });
 
             if (!bringMatch) {
-                if (['critical', 'high', 'medium', 'low'].includes(si.urgency) && !_isBringPurchased(si.name, si.urgency)) {
-                    toAdd.push({ name: si.name, specification: expectedSpec });
-                    autoAdded.add(si.name.toLowerCase());
-                }
+                // Suggestions stay suggestions. Background sync must never add
+                // a product without an explicit button click or barcode scan.
+                continue;
             } else if (!_isBringPurchased(si.name, si.urgency)) {
                 // Already on Bring — sync urgency spec unconditionally
                 const currentSpec = (bringMatch.specification || '').toLowerCase();

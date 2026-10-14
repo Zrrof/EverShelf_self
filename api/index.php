@@ -16651,24 +16651,18 @@ function bringSuggestItems(PDO $db): void {
             $alreadyJson  = json_encode(array_values($knownNames), JSON_UNESCAPED_UNICODE);
             $dietaryLine  = $dietary ? "- Dietary preferences: {$dietary}" : '';
 
-            $langAdj = ['it'=>'Italian','en'=>'English','de'=>'German','fr'=>'French','es'=>'Spanish','zh'=>'Chinese'][$tipLang] ?? 'English';
-            $prompt = "You are a helpful {$langAdj} household shopping assistant.\n"
-                . "Today is {$monthName} " . date('Y') . ".\n"
-                . "The user already has these products in stock: {$inStockJson}\n"
-                . "The following products are already in the shopping list: {$alreadyJson}\n"
+            $prompt = "Du bist ein hilfreicher Einkaufsassistent für deutsche Haushalte.\n"
+                . "Heute ist {$monthName} " . date('Y') . ".\n"
+                . "Bereits vorhandene Produkte: {$inStockJson}\n"
+                . "Bereits auf der Einkaufsliste: {$alreadyJson}\n"
                 . ($dietaryLine ? $dietaryLine . "\n" : '')
-                . "\nTask: suggest 3 to 6 additional products the user should buy this month.\n"
-                . "Focus on:\n"
-                . "  a) Seasonal Italian fruits and vegetables for {$monthName}\n"
-                . "  b) Complementary staples that pair well with what the user has\n"
-                . "  c) Anything commonly forgotten but regularly needed\n"
-                . "Do NOT suggest products already in stock or already in the shopping list.\n"
-                . "Also write one short seasonal tip (max 15 words) in Italian.\n"
-                . "\nReply ONLY with valid JSON in this exact format (no markdown):\n"
-                . "{\"seasonal_tip\":\"...\",\"suggestions\":[{\"name\":\"...\",\"reason\":\"...\",\"category\":\"...\",\"priority\":\"bassa\"}]}\n"
-                . "Category must be one of: frutta,verdura,latticini,carne,pesce,pane,cereali,condimenti,bevande,surgelati,altro\n"
-                . "Priority must be: bassa\n"
-                . "Name and reason must be in Italian. Reason max 8 words.";
+                . "\nAufgabe: Schlage 3 bis 6 zusätzliche Produkte vor, die diesen Monat gekauft werden sollten.\n"
+                . "Berücksichtige saisonales Obst und Gemüse, passende Grundzutaten und häufig vergessene Produkte.\n"
+                . "Schlage niemals Produkte vor, die bereits vorhanden oder bereits auf der Einkaufsliste sind.\n"
+                . "Antworte ausschließlich mit gültigem JSON in diesem Format (kein Markdown):\n"
+                . "{\"seasonal_tip\":\"...\",\"suggestions\":[{\"name\":\"...\",\"reason\":\"...\",\"category\":\"...\",\"priority\":\"niedrig\"}]}\n"
+                . "Kategorie: frucht,gemuese,milchprodukte,fleisch,fisch,brot,getreide,gewuerze,getraenke,tiefgekuehlt,sonstiges.\n"
+                . "Priorität muss \"niedrig\" sein. Name, Begründung und Tipp müssen Deutsch sein; Begründung maximal 8 Wörter.";
 
             $payload   = ['contents' => [['parts' => [['text' => $prompt]]]]];
             $gemResult = callGeminiWithFallback($apiKey, $payload, 20, 'bring_suggest');
