@@ -4364,7 +4364,7 @@ function listInventory(PDO $db): void {
                COALESCE(p.is_favorite, 0) as is_favorite
         FROM inventory i
         JOIN products p ON i.product_id = p.id
-        WHERE i.quantity > 0
+        WHERE i.quantity >= 0
     ";
     $params = [];
     if (!empty($location)) {
@@ -4376,7 +4376,8 @@ function listInventory(PDO $db): void {
     $stmt->execute($params);
     $rows = $stmt->fetchAll();
     if (!$includeDepleted) {
-        $rows = array_values(array_filter($rows, fn(array $r): bool => !isInventoryDepleted($r)));
+        // Keep explicit zero-stock rows visible; hide only unusable trace remnants.
+        $rows = array_values(array_filter($rows, fn(array $r): bool => (float)($r['quantity'] ?? 0) <= 0 || !isInventoryDepleted($r)));
     }
     EverLog::debug('inventory_list fetched', [
         'rows' => count($rows),
@@ -15895,6 +15896,13 @@ function smartShopping(PDO $db, ?int $planDays = null): void {
         $urgency = 'none'; // none, low, medium, high, critical
         $reasons = [];
         $score = 0;
+
+        // The shopping suggestions list is intentionally an empty-stock list.
+        // Products with any usable quantity remain visible in inventory but do
+        // not become purchase suggestions until their stock reaches zero.
+        if ($qty > 0) {
+            continue;
+        }
 
         // Out of stock
         if ($qty <= 0) {

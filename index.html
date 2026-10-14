@@ -274,6 +274,13 @@
             </div>
             <button class="btn btn-small" onclick="endSpesaMode()" data-i18n="scan.mode_shopping_end">✅ Fine</button>
         </div>
+        <div class="spesa-mode-banner" id="inventory-mode-banner" style="display:none">
+            <div class="spesa-banner-left">
+                <span data-i18n="scan.inventory_mode_active">📦 Inventarmodus</span>
+                <span class="spesa-stat" id="inventory-mode-location-label"></span>
+            </div>
+            <button class="btn btn-small" onclick="endInventoryMode()" data-i18n="scan.inventory_mode_end">✅ Beenden</button>
+        </div>
         <div class="scan-container">
             <!-- Camera viewport -->
             <div class="scanner-viewport" id="scanner-viewport">
@@ -918,6 +925,25 @@
         </button>
     </section>
 
+    <section id="page-spend" class="page">
+        <div class="page-header">
+            <button class="back-btn" onclick="goBack()" data-i18n="btn.back">← Zurück</button>
+            <h2 data-i18n="spend_page.title">💶 Ausgaben</h2>
+        </div>
+        <div class="settings-card spend-entry-card">
+            <h3 data-i18n="spend_page.entry_title">Einkaufsbetrag erfassen</h3>
+            <p class="settings-hint" data-i18n="spend_page.entry_hint">Erfasse den Gesamtbetrag eines Einkaufs unabhängig von der Einkaufsliste.</p>
+            <label for="spend-page-amount" data-i18n="shopping.spend_amount_label">Betrag (€)</label>
+            <input type="number" id="spend-page-amount" class="form-input" min="0.01" step="0.01" inputmode="decimal" data-i18n-placeholder="shopping.spend_amount_placeholder">
+            <button class="btn btn-accent full-width" type="button" onclick="saveSpendFromPage()" data-i18n="spend_page.save">💾 Betrag speichern</button>
+            <div id="spend-page-feedback" class="settings-hint" aria-live="polite"></div>
+        </div>
+        <div class="settings-card">
+            <h3 data-i18n="spend_page.history_title">Ausgabenübersicht</h3>
+            <div id="spend-page-stats" class="settings-hint" data-i18n="spend_page.loading">Wird geladen…</div>
+        </div>
+    </section>
+
     <!-- ===== SETTINGS PAGE ===== -->
     <section class="page" id="page-settings">
         <div class="page-header">
@@ -951,6 +977,20 @@
                         </select>
                         <p class="settings-hint mt-2" data-i18n="settings.language.restart_notice">La pagina verrà ricaricata per applicare la nuova lingua.</p>
                     </div>
+                </div>
+                <div class="settings-card">
+                    <h4 data-i18n="settings.inventory_mode.title">📦 Inventarmodus</h4>
+                    <p class="settings-hint" data-i18n="settings.inventory_mode.hint">Scanne alle Produkte eines Lagerortes. Jeder erkannte Barcode wird als ein Stück an diesem Ort gezählt.</p>
+                    <div class="form-group">
+                        <label data-i18n="settings.inventory_mode.location">Lagerort</label>
+                        <select id="setting-inventory-mode-location" class="form-input">
+                            <option value="dispensa" data-i18n="locations.dispensa">Vorrat</option>
+                            <option value="frigo" data-i18n="locations.frigo">Kühlschrank</option>
+                            <option value="freezer" data-i18n="locations.freezer">Gefrierfach</option>
+                            <option value="altro" data-i18n="locations.altro">Sonstiges</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-accent full-width" type="button" onclick="startInventoryMode()" data-i18n="settings.inventory_mode.start">📷 Inventar scannen</button>
                 </div>
                 <div class="settings-card">
                     <h4 data-i18n="settings.info.currency_title">💱 Valuta</h4>
@@ -2127,6 +2167,10 @@
         <span class="nav-icon">🛒</span>
         <span class="nav-label" data-i18n="nav.shopping">Spesa</span>
     </button>
+    <button class="nav-btn" onclick="showPage('spend')" data-page="spend">
+        <span class="nav-icon">💶</span>
+        <span class="nav-label" data-i18n="nav.spend">Ausgaben</span>
+    </button>
     <button class="nav-btn" onclick="showPage('log')" data-page="log">
         <span class="nav-icon">📋</span>
         <span class="nav-label" data-i18n="nav.log">Storico</span>
@@ -2301,6 +2345,6 @@
     </div>
 </div>
 
-<script src="assets/js/app.js?v=20261005a"></script>
+<script src="assets/js/app.js?v=20261014a"></script>
 </body>
 </html>

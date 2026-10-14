@@ -10,6 +10,7 @@
         "recipes": "Rezepte",
         "gemini": "Gemini",
         "shopping": "Einkauf",
+        "spend": "Ausgaben",
         "log": "Verlauf",
         "settings": "Einstellungen"
     },
@@ -235,6 +236,12 @@
         "shopping_add_mode_off": "Scanmodus zum Hinzufügen beendet",
         "shopping_add_success": "{name} wurde zur Einkaufsliste hinzugefügt",
         "shopping_add_error": "Artikel konnte nicht zur Einkaufsliste hinzugefügt werden",
+        "inventory_mode_active": "📦 Inventarmodus",
+        "inventory_mode_end": "✅ Beenden",
+        "inventory_mode_started": "Inventarmodus aktiv — scanne Produkte des Lagerortes",
+        "inventory_mode_ended": "Inventarmodus beendet",
+        "inventory_mode_added": "{name} wurde dem Inventar hinzugefügt",
+        "inventory_mode_error": "Produkt konnte nicht ins Inventar übernommen werden",
         "zoom": "Zoom",
         "tab_barcode": "Barcode",
         "tab_name": "Name",
@@ -315,6 +322,19 @@
         "spesa_session_qty": "Menge",
         "spesa_session_saved": "Produkt aktualisiert",
         "spesa_session_save_error": "Produkt konnte nicht aktualisiert werden"
+    },
+    "spend_page": {
+        "title": "💶 Ausgaben",
+        "entry_title": "Einkaufsbetrag erfassen",
+        "entry_hint": "Erfasse den Gesamtbetrag eines Einkaufs unabhängig von der Einkaufsliste.",
+        "save": "💾 Betrag speichern",
+        "history_title": "Ausgabenübersicht",
+        "loading": "Wird geladen…",
+        "current": "Diesen Monat",
+        "previous": "Letzten Monat",
+        "invalid": "Bitte einen gültigen Betrag eingeben.",
+        "saved": "Betrag gespeichert.",
+        "error": "Betrag konnte nicht gespeichert werden."
     },
     "action": {
         "title": "Was möchtest du tun?",
@@ -1384,6 +1404,12 @@
             "added": "Ort hinzugefügt — Speichern tippen zum Sync",
             "reserved": "Name ist für einen Standardort reserviert",
             "in_use": "„{name}“ kann nicht entfernt werden: noch {n} Artikel dort"
+        },
+        "inventory_mode": {
+            "title": "📦 Inventarmodus",
+            "hint": "Scanne alle Produkte eines Lagerortes. Jeder erkannte Barcode wird als ein Stück an diesem Ort gezählt.",
+            "location": "Lagerort",
+            "start": "📷 Inventar scannen"
         },
         "ai": {
             "title": "🤖 Künstliche Intelligenz",

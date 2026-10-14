@@ -1153,7 +1153,7 @@ async function discoverScaleGateway() {
 }
 
 // ===== i18n TRANSLATION SYSTEM =====
-const _I18N_VERSION = '20261005a'; // bump when translations change
+const _I18N_VERSION = '20261014a'; // bump when translations change
 let _i18nStrings = null;   // current language translations (flat)
 let _i18nFallback = null;  // English fallback (flat) — never Italian for other locales
 let _i18nLoadedVersion = null;
@@ -4039,6 +4039,13 @@ async function loadSettingsUI() {
     renderAppliances(s.appliances || []);
     renderCustomLocations(s.custom_locations || []);
     mergeCustomLocations(s.custom_locations || []);
+    const inventoryModeLocationEl = document.getElementById('setting-inventory-mode-location');
+    if (inventoryModeLocationEl) {
+        inventoryModeLocationEl.innerHTML = Object.entries(LOCATIONS).map(([key, meta]) =>
+            `<option value="${escapeHtml(key)}">${escapeHtml(meta.label)}</option>`
+        ).join('');
+        inventoryModeLocationEl.value = _inventoryModeLocation || 'dispensa';
+    }
     const mealPlanEnabled = s.meal_plan_enabled !== false;
     const mpEnabledEl = document.getElementById('setting-meal-plan-enabled');
     if (mpEnabledEl) mpEnabledEl.checked = mealPlanEnabled;
@@ -5169,6 +5176,7 @@ function refreshCurrentPage() {
             loadShoppingList._bgCall = true;
             loadShoppingList();
             break;
+        case 'spend': loadSpendPage(); break;
         case 'products': loadAllProducts(); break;
         case 'recipe':   loadRecipeArchive(); break;
         case 'log':      loadLog(); break;
@@ -5221,11 +5229,13 @@ function showPage(pageId, param = null, options = {}) {
         case 'inventory':
             if (param !== null) {
                 currentLocation = param;
-                filterLocation(param);
+                document.querySelectorAll('.location-tabs .tab').forEach(t => {
+                    t.classList.toggle('active', t.dataset.loc === param);
+                });
             }
             loadInventory();
             break;
-        case 'scan': preloadBarcodeEngines(); _dismissFamilySiblingPrompt(); _resetAiFallbackForNewScan(); initScanner(); clearQuickNameResults(); updateSpesaBanner(); updateScanRecents(); _applySpesaScanUI();
+        case 'scan': preloadBarcodeEngines(); _dismissFamilySiblingPrompt(); _resetAiFallbackForNewScan(); initScanner(); clearQuickNameResults(); updateSpesaBanner(); _updateInventoryModeBanner(); updateScanRecents(); _applySpesaScanUI();
             // Pre-warm the embedding model the first time user visits scan page
             if (typeof window._getCategoryPipeline === 'function' && !window._categoryPipelineReady) {
                 window._getCategoryPipeline(); // fire-and-forget
@@ -7724,9 +7734,45 @@ function isInventoryDepleted(item) {
     return q <= (thresholds[unit] ?? 0.5);
 }
 
-/** Items shown in the inventory list (excludes depleted / trace leftovers). */
+/** Items shown in the inventory list. Keep confirmed empty rows visible so they
+ * can be restocked and contribute to empty-stock shopping suggestions. */
 function _inventoryVisibleItems(items) {
-    return (items || []).filter(i => !isInventoryDepleted(i));
+    return (items || []).filter(i => {
+        const q = parseFloat(i?.quantity);
+        return Number.isFinite(q) && (q <= 0 || !isInventoryDepleted(i));
+    });
+}
+
+async function loadSpendPage() {
+    const el = document.getElementById('spend-page-stats');
+    if (!el) return;
+    try {
+        const data = await api('spend_stats');
+        const symbol = data.currency_symbol || getSettings().price_currency || '€';
+        const current = Number(data.current_amount || 0).toFixed(2).replace('.', ',');
+        const previous = Number(data.prev_amount || 0).toFixed(2).replace('.', ',');
+        el.innerHTML = `${escapeHtml(t('spend_page.current'))}: <strong>${escapeHtml(symbol)}${current}</strong><br>${escapeHtml(t('spend_page.previous'))}: ${escapeHtml(symbol)}${previous}`;
+    } catch (_) {
+        el.textContent = t('error.generic');
+    }
+}
+
+async function saveSpendFromPage() {
+    const input = document.getElementById('spend-page-amount');
+    const feedback = document.getElementById('spend-page-feedback');
+    const amount = Number(String(input?.value || '').replace(',', '.'));
+    if (!Number.isFinite(amount) || amount <= 0) {
+        if (feedback) feedback.textContent = t('spend_page.invalid');
+        return;
+    }
+    const currency = getSettings().price_currency || 'EUR';
+    const result = await api('spend_add', {}, 'POST', { amount, currency });
+    if (result?.success) {
+        if (feedback) feedback.textContent = t('spend_page.saved');
+        if (input) input.value = '';
+        loadSpendPage();
+        if (typeof loadDashboard === 'function') loadDashboard();
+    } else if (feedback) feedback.textContent = t('spend_page.error');
 }
 
 function alertQtyDisplay(item) {
@@ -7902,12 +7948,14 @@ function formatPackageFraction(qty, defaultQty) {
 
 // ===== INVENTORY =====
 async function loadInventory() {
+    const requestId = ++loadInventory._requestId;
     try {
         _restoreInventorySearchInput();
         const [locData, allData] = await Promise.all([
             api('inventory_list', currentLocation ? { location: currentLocation } : {}),
             currentLocation ? api('inventory_list', {}) : null,
         ]);
+        if (requestId !== loadInventory._requestId) return;
         currentInventory = _inventoryVisibleItems(locData.inventory || []);
         _allInventoryCache = currentLocation
             ? _inventoryVisibleItems(allData?.inventory || [])
@@ -7923,6 +7971,7 @@ async function loadInventory() {
         console.error('Inventory load error:', err);
     }
 }
+loadInventory._requestId = 0;
 
 function renderInventoryItem(item) {
     const catKey = mapToLocalCategory(item.category, item.name);
@@ -10194,6 +10243,31 @@ async function _confirmShoppingScanMatch(product) {
 
 async function _finishBarcodeResolved(barcode) {
     showLoading(false);
+    if (_inventoryMode && currentProduct) {
+        if (_pendingBarcodeSave) {
+            try { await _pendingBarcodeSave; } catch (_) {}
+        }
+        const product = currentProduct;
+        if (product.id) {
+            const result = await api('inventory_add', {}, 'POST', {
+                product_id: product.id,
+                quantity: 1,
+                location: _inventoryModeLocation,
+            }).catch(() => null);
+            if (result?.success !== false && !result?.error) {
+                showToast(t('scan.inventory_mode_added').replace('{name}', product.name), 'success');
+                currentProduct = null;
+                _setScanStatus(t('scan.status_scanning'), '', '');
+                resumeScanner();
+                return;
+            }
+        }
+        showToast(t('scan.inventory_mode_error'), 'error');
+        currentProduct = null;
+        _setScanStatus(t('scan.status_scanning'), '', '');
+        resumeScanner();
+        return;
+    }
     if (_shoppingScanAddMode && currentProduct) {
         const product = currentProduct;
         const result = await api('shopping_add', {}, 'POST', {
@@ -23739,6 +23813,8 @@ function generateScreensaverFact() {
 // ===== SPESA MODE (long-press camera for continuous scanning) =====
 let _spesaMode = false;
 let _shoppingScanAddMode = false;
+let _inventoryMode = false;
+let _inventoryModeLocation = 'dispensa';
 let _shoppingBoughtFlow = false;
 let _longPressTimer = null;
 let _spesaSession = []; // { name, qty, unit } per ogni prodotto aggiunto
@@ -23762,6 +23838,33 @@ function toggleShoppingScanAddMode() {
     }
     showToast(t(_shoppingScanAddMode ? 'scan.shopping_add_mode_on' : 'scan.shopping_add_mode_off'), 'info');
     if (_shoppingScanAddMode) showPage('scan');
+}
+
+function _updateInventoryModeBanner() {
+    const banner = document.getElementById('inventory-mode-banner');
+    if (!banner) return;
+    banner.style.display = _inventoryMode ? 'flex' : 'none';
+    const label = document.getElementById('inventory-mode-location-label');
+    if (label) label.textContent = LOCATIONS[_inventoryModeLocation]?.label || _inventoryModeLocation;
+}
+
+function startInventoryMode() {
+    const selected = document.getElementById('setting-inventory-mode-location')?.value;
+    if (selected) _inventoryModeLocation = selected;
+    _inventoryMode = true;
+    _shoppingScanAddMode = false;
+    _syncSpesaQuickBtn();
+    _updateInventoryModeBanner();
+    showToast(t('scan.inventory_mode_started'), 'success');
+    showPage('scan');
+}
+
+function endInventoryMode() {
+    _inventoryMode = false;
+    _updateInventoryModeBanner();
+    stopScanner();
+    showToast(t('scan.inventory_mode_ended'), 'info');
+    showPage('dashboard');
 }
 
 function _spesaScanUiBlocked() {
