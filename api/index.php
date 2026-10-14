@@ -1967,8 +1967,8 @@ function inventoryImportUpsertProduct(PDO $db, array $data): array {
         }
     } else {
         $stmt = $db->prepare('
-            INSERT INTO products (name, brand, category, image_url, unit, default_quantity, notes, barcode, package_unit, shopping_name, nutriments_json, name_user_set)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO products (name, brand, category, image_url, unit, default_quantity, notes, barcode, package_unit, shopping_name, nutriments_json, name_user_set, minimum_stock, expiry_type, reminder_days, compartment)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute(productSaveParams($fields));
         $id = (int)$db->lastInsertId();
@@ -2428,7 +2428,7 @@ function _haFormatProduct(array $row): array {
 /** Full product detail SQL fragment reused in all HA queries. */
 function _haProductSelect(): string {
     return "p.id AS product_id, i.id AS inventory_id,
-            p.name, p.brand, p.category, p.unit, p.default_quantity, p.package_unit,
+            p.name, p.brand, p.category, p.unit, p.default_quantity, p.package_unit, p.minimum_stock, p.expiry_type, p.reminder_days, p.compartment,
             i.quantity, i.location, i.expiry_date, i.opened_at, i.vacuum_sealed";
 }
 
@@ -4091,8 +4091,8 @@ function saveProduct(PDO $db): void {
         }
 
         $stmt = $db->prepare('
-            INSERT INTO products (name, brand, category, image_url, unit, default_quantity, notes, barcode, package_unit, shopping_name, nutriments_json, name_user_set)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO products (name, brand, category, image_url, unit, default_quantity, notes, barcode, package_unit, shopping_name, nutriments_json, name_user_set, minimum_stock, expiry_type, reminder_days, compartment)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ');
         $stmt->execute($params);
         $id = (int)$db->lastInsertId();
@@ -4360,10 +4360,11 @@ function listInventory(PDO $db): void {
     $includeDepleted = !empty($_GET['include_depleted']) || !empty($_GET['for_recipe']);
     $query = "
         SELECT i.*, p.name, p.brand, p.category, p.image_url, p.unit, p.barcode, p.default_quantity, p.package_unit,
+               p.minimum_stock, p.expiry_type, p.reminder_days, p.compartment,
                COALESCE(i.vacuum_sealed, 0) as vacuum_sealed, i.opened_at, p.shopping_name,
                COALESCE(p.is_favorite, 0) as is_favorite
         FROM inventory i
-        JOIN products p ON i.product_id = p.id
+         JOIN products p ON i.product_id = p.id
         WHERE i.quantity >= 0
     ";
     $params = [];
@@ -5677,6 +5678,10 @@ function mergeIncomingProductFields(?array $existing, array $input, ?string $bar
         'shopping_name'     => $shoppingName,
         'nutriments_json'   => $nutriJson,
         'name_user_set'     => (int)($nameUserSet ?? 0),
+        'minimum_stock'     => max(0, (float)($input['minimum_stock'] ?? ($existing['minimum_stock'] ?? 0))),
+        'expiry_type'       => in_array(($input['expiry_type'] ?? ($existing['expiry_type'] ?? 'best_before')), ['best_before', 'use_by', 'none'], true) ? ($input['expiry_type'] ?? ($existing['expiry_type'] ?? 'best_before')) : 'best_before',
+        'reminder_days'     => (($input['reminder_days'] ?? ($existing['reminder_days'] ?? null)) === '' || ($input['reminder_days'] ?? ($existing['reminder_days'] ?? null)) === null) ? null : max(0, (int)($input['reminder_days'] ?? 0)),
+        'compartment'       => trim((string)($input['compartment'] ?? ($existing['compartment'] ?? ''))),
     ];
     return normalizePieceProductFields($fields, $existing);
 }
@@ -5711,6 +5716,10 @@ function productSaveParams(array $fields): array {
         $fields['shopping_name'],
         $fields['nutriments_json'],
         (int)($fields['name_user_set'] ?? 0),
+        $fields['minimum_stock'] ?? 0,
+        $fields['expiry_type'] ?? 'best_before',
+        $fields['reminder_days'] ?? null,
+        $fields['compartment'] ?? '',
     ];
 }
 
@@ -5718,7 +5727,7 @@ function executeProductUpdate(PDO $db, array $fields, int $id): void {
     $stmt = $db->prepare('
         UPDATE products SET name=?, brand=?, category=?, image_url=?, unit=?,
         default_quantity=?, notes=?, barcode=?, package_unit=?, shopping_name=?,
-        nutriments_json=?, name_user_set=?,
+        nutriments_json=?, name_user_set=?, minimum_stock=?, expiry_type=?, reminder_days=?, compartment=?,
         updated_at=CURRENT_TIMESTAMP WHERE id=?
     ');
     $stmt->execute([...productSaveParams($fields), $id]);

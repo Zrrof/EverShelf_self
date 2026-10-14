@@ -240,6 +240,9 @@
                 <button class="page-header-action-btn" onclick="_showExportModal()" title="Export" data-i18n-title="export.btn_title">📤</button>
             </div>
         </div>
+        <button type="button" class="location-picker-trigger" id="location-picker-trigger" onclick="openLocationSheet()">
+            <span id="inventory-location-label" data-i18n="inventory.all_locations">Alle Lagerorte</span><span aria-hidden="true">⌄</span>
+        </button>
         <div class="location-tabs" id="location-tabs">
             <button class="tab active" onclick="filterLocation('')" data-loc="" data-i18n="inventory.filter_all">Tutti</button>
             <button class="tab" onclick="filterLocation('dispensa')" data-loc="dispensa">🗄️ <span data-i18n="locations.dispensa">Dispensa</span></button>
@@ -275,6 +278,13 @@
             <button type="button" class="inventory-fab inventory-fab-scan" onclick="showPage('scan')" data-i18n-title="inventory.scan_add" title="Barcode scannen">▦</button>
         </div>
     </section>
+
+    <div class="modal-overlay location-sheet-overlay" id="location-sheet-overlay" style="display:none" onclick="closeLocationSheet(event)">
+        <div class="location-sheet" role="dialog" aria-modal="true" aria-labelledby="location-sheet-title" onclick="event.stopPropagation()">
+            <div class="location-sheet-header"><h3 id="location-sheet-title">Lagerort wählen</h3><button type="button" onclick="closeLocationSheet()" aria-label="Schließen">×</button></div>
+            <div id="location-sheet-options"></div>
+        </div>
+    </div>
 
     <!-- ===== SCAN PAGE ===== -->
     <section class="page" id="page-scan">
@@ -718,6 +728,30 @@
                 <div class="form-group flex-1">
                     <label data-i18n="product.default_qty_label">🔢 Quantità default</label>
                     <input type="number" id="pf-defqty" class="form-input" value="1" min="0.1" step="any">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label data-i18n="product.minimum_stock_label">📉 Mindestbestand</label>
+                    <input type="number" id="pf-minimum-stock" class="form-input" min="0" step="any" value="0" data-i18n-placeholder="product.minimum_stock_placeholder">
+                </div>
+                <div class="form-group flex-1">
+                    <label data-i18n="product.reminder_days_label">⏰ Erinnerung vorher</label>
+                    <input type="number" id="pf-reminder-days" class="form-input" min="0" max="365" step="1" placeholder="Standard" data-i18n-placeholder="product.reminder_days_placeholder">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label data-i18n="product.expiry_type_label">📅 Datentyp</label>
+                    <select id="pf-expiry-type" class="form-input">
+                        <option value="best_before" data-i18n="product.expiry_best_before">Mindesthaltbar bis</option>
+                        <option value="use_by" data-i18n="product.expiry_use_by">Zu verbrauchen bis</option>
+                        <option value="none" data-i18n="product.expiry_none">Kein Ablaufdatum</option>
+                    </select>
+                </div>
+                <div class="form-group flex-1">
+                    <label data-i18n="product.compartment_label">🗄️ Fach</label>
+                    <input type="text" id="pf-compartment" class="form-input" placeholder="z. B. oberes Fach" data-i18n-placeholder="product.compartment_placeholder">
                 </div>
             </div>
             <div id="pf-conf-size-row" class="conf-size-row" style="display:none">

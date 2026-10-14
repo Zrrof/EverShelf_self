@@ -6,10 +6,10 @@
     "nav": {
         "title": "EverShelf",
         "home": "Home",
-        "inventory": "Liste",
+        "inventory": "Vorrat",
         "recipes": "Rezepte",
         "gemini": "Gemini",
-        "shopping": "Einkauf",
+        "shopping": "Einkaufsliste",
         "spend": "Ausgaben",
         "log": "Verlauf",
         "settings": "Einstellungen",
@@ -189,7 +189,9 @@
         "banner_finished_restore_prompt": "Wie viele {unit} {name} hast du noch? (Systemschätzung: {qty})"
     },
     "inventory": {
-        "title": "Liste",
+        "title": "Alle Lagerorte",
+        "all_locations": "Alle Lagerorte",
+        "choose_location": "Lagerort wählen",
         "filter_all": "Alle",
         "search_placeholder": "🔍 Produkt suchen...",
         "clear_search": "Suche löschen",
@@ -239,7 +241,7 @@
         "opened_section": "Geöffnet"
     },
     "scan": {
-        "title": "Scannen",
+        "title": "Scanner",
         "mode_shopping": "📷 Dauerhaftes Scannen",
         "mode_shopping_end": "✅ Fertig",
         "spesa_btn": "📷 Dauerhaft",
@@ -472,6 +474,16 @@
         "reason_other": "❓ Sonstiges"
     },
     "product": {
+        "minimum_stock_label": "📉 Mindestbestand",
+        "minimum_stock_placeholder": "0 = keine Warnung",
+        "reminder_days_label": "⏰ Erinnerung vorher",
+        "reminder_days_placeholder": "Standard",
+        "expiry_type_label": "📅 Datentyp",
+        "expiry_best_before": "Mindesthaltbar bis",
+        "expiry_use_by": "Zu verbrauchen bis",
+        "expiry_none": "Kein Ablaufdatum",
+        "compartment_label": "🗄️ Fach",
+        "compartment_placeholder": "z. B. oberes Fach",
         "title_new": "Neues Produkt",
         "title_edit": "Produkt bearbeiten",
         "ai_fill": "📷 Foto machen und mit KI identifizieren",
@@ -2100,3 +2112,4 @@
         "ready_title": "Alles bereit!"
     }
 }
+

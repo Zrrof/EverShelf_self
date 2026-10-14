@@ -158,6 +158,10 @@ function initializeDB(PDO $db): void {
             default_quantity REAL DEFAULT 1,
             notes TEXT DEFAULT '',
             shopping_name TEXT DEFAULT '',
+            minimum_stock REAL DEFAULT 0,
+            expiry_type TEXT DEFAULT 'best_before',
+            reminder_days INTEGER DEFAULT NULL,
+            compartment TEXT DEFAULT '',
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
@@ -219,6 +223,19 @@ function migrateDB(PDO $db): void {
     if (!in_array('shopping_name', $colNames)) {
         try { $db->exec("ALTER TABLE products ADD COLUMN shopping_name TEXT DEFAULT ''"); }
         catch (PDOException $e) { if (strpos($e->getMessage(), 'duplicate column') === false) throw $e; }
+    }
+    foreach ([
+        'minimum_stock REAL DEFAULT 0',
+        "expiry_type TEXT DEFAULT 'best_before'",
+        'reminder_days INTEGER DEFAULT NULL',
+        "compartment TEXT DEFAULT ''",
+    ] as $definition) {
+        $column = strtok($definition, ' ');
+        if (!in_array($column, $colNames, true)) {
+            try { $db->exec("ALTER TABLE products ADD COLUMN {$definition}"); }
+            catch (PDOException $e) { if (strpos($e->getMessage(), 'duplicate column') === false) throw $e; }
+            $colNames[] = $column;
+        }
     }
 
     // Empty barcode strings break UNIQUE (only one '' allowed); normalize to NULL.

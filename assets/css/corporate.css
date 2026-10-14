@@ -72,6 +72,28 @@ button {
     padding: 4px 0 10px;
     scrollbar-width: none;
 }
+
+.location-picker-trigger {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 0;
+    background: transparent;
+    padding: .35rem .25rem .7rem;
+    font-size: 1.35rem;
+    color: var(--text-primary, #191919);
+}
+.location-picker-trigger span:last-child { color: #eeb51b; font-size: 1.7rem; }
+.location-sheet-overlay { align-items: flex-end; justify-content: center; z-index: 1200; }
+.location-sheet { width: min(100%, 560px); max-height: 80vh; overflow: auto; background: #fff; border-radius: 26px 26px 0 0; box-shadow: 0 -8px 30px rgba(0,0,0,.2); }
+.location-sheet-header { display:flex; align-items:center; justify-content:space-between; padding: 1.1rem 1.25rem; border-bottom: 1px solid #ddd; }
+.location-sheet-header h3 { margin:0; font-size:1.2rem; }
+.location-sheet-header button { border:0; background:transparent; font-size:2rem; line-height:1; color:#666; }
+.location-sheet-option { width:100%; display:flex; align-items:center; gap:.9rem; border:0; background:#fff; padding:1rem 1.25rem; text-align:left; font-size:1.1rem; }
+.location-sheet-option.active { color:#eab21a; }
+.location-sheet-icon { width:2rem; text-align:center; font-size:1.35rem; }
+.location-sheet-check { margin-left:auto; color:#eab21a; font-size:1.5rem; }
 .inventory-filter-row::-webkit-scrollbar { display: none; }
 .inventory-filter {
     flex: 0 0 auto;

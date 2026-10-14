@@ -8054,7 +8054,7 @@ function renderInventoryItem(item) {
                 <div class="inv-name">${escapeHtml(item.name)}</div>
                 ${item.brand ? `<div class="inv-brand">${escapeHtml(item.brand)}</div>` : ''}
                 <div class="inv-meta">
-                    <span class="inv-badge badge-location">${locInfo.icon} ${locInfo.label}</span>
+                    <span class="inv-badge badge-location">${locInfo.icon} ${locInfo.label}${item.compartment ? ` · ${escapeHtml(item.compartment)}` : ''}</span>
                     ${catBadge}
                     ${expiryBadge}
                     ${openedBadge}
@@ -8502,10 +8502,32 @@ async function _refineCategoryBadgesAsync() {
 
 function filterLocation(loc) {
     currentLocation = loc;
+    const label = document.getElementById('inventory-location-label');
+    if (label) label.textContent = loc && LOCATIONS[loc] ? LOCATIONS[loc].label : t('inventory.all_locations');
     document.querySelectorAll('.location-tabs .tab').forEach(t => {
         t.classList.toggle('active', t.dataset.loc === loc);
     });
     loadInventory();
+}
+
+function openLocationSheet() {
+    const overlay = document.getElementById('location-sheet-overlay');
+    const options = document.getElementById('location-sheet-options');
+    if (!overlay || !options) return;
+    const rows = [[ '', '☷', t('inventory.all_locations') ], ...Object.entries(LOCATIONS).map(([key, meta]) => [key, meta.icon, meta.label])];
+    options.innerHTML = rows.map(([key, icon, label]) => `<button type="button" class="location-sheet-option${currentLocation === key ? ' active' : ''}" onclick="selectLocationSheet('${escapeHtml(key)}')"><span class="location-sheet-icon">${icon}</span><span>${escapeHtml(label)}</span>${currentLocation === key ? '<span class="location-sheet-check">✓</span>' : ''}</button>`).join('');
+    overlay.style.display = 'flex';
+}
+
+function closeLocationSheet(event) {
+    if (event && event.target !== event.currentTarget) return;
+    const overlay = document.getElementById('location-sheet-overlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+function selectLocationSheet(loc) {
+    filterLocation(loc);
+    closeLocationSheet();
 }
 
 function setInventoryFilter(mode) {
@@ -10718,6 +10740,10 @@ function startManualEntry(barcode = '') {
     document.getElementById('pf-category').value = '';
     document.getElementById('pf-unit').value = 'pz';
     document.getElementById('pf-defqty').value = '1';
+    document.getElementById('pf-minimum-stock').value = '0';
+    document.getElementById('pf-reminder-days').value = '';
+    document.getElementById('pf-expiry-type').value = 'best_before';
+    document.getElementById('pf-compartment').value = '';
     document.getElementById('pf-notes').value = '';
     document.getElementById('pf-barcode').value = barcode || '';
     document.getElementById('pf-image').value = '';
@@ -10980,6 +11006,10 @@ async function submitProduct(e) {
         category: document.getElementById('pf-category').value,
         unit: pfUnit,
         default_quantity: pfUnit === 'conf' ? (parseFloat(document.getElementById('pf-conf-size')?.value) || 1) : (parseFloat(document.getElementById('pf-defqty').value) || 1),
+        minimum_stock: parseFloat(document.getElementById('pf-minimum-stock').value) || 0,
+        reminder_days: document.getElementById('pf-reminder-days').value === '' ? null : parseInt(document.getElementById('pf-reminder-days').value, 10),
+        expiry_type: document.getElementById('pf-expiry-type').value || 'best_before',
+        compartment: document.getElementById('pf-compartment').value.trim(),
         package_unit: pfUnit === 'conf' ? (document.getElementById('pf-conf-unit')?.value || '') : '',
         notes: document.getElementById('pf-notes').value,
         barcode: document.getElementById('pf-barcode').value || null,
@@ -11365,6 +11395,10 @@ function editProductFromAction() {
     document.getElementById('pf-notes').value = currentProduct.notes || '';
     document.getElementById('pf-unit').value = currentProduct.unit || 'pz';
     document.getElementById('pf-defqty').value = currentProduct.default_quantity || 1;
+    document.getElementById('pf-minimum-stock').value = currentProduct.minimum_stock ?? 0;
+    document.getElementById('pf-reminder-days').value = currentProduct.reminder_days ?? '';
+    document.getElementById('pf-expiry-type').value = currentProduct.expiry_type || 'best_before';
+    document.getElementById('pf-compartment').value = currentProduct.compartment || '';
     document.getElementById('product-form-title').textContent = t('product.title_edit');
     const pfAiRow = document.getElementById('pf-ai-fill-row');
     if (pfAiRow) pfAiRow.style.display = 'none';
