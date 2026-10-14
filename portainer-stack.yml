@@ -1,7 +1,7 @@
 services:
   evershelf:
     # Pin the verified build so an older concurrent workflow cannot replace it.
-    image: ghcr.io/zrrof/evershelf:sha-30e6b26
+    image: ghcr.io/zrrof/evershelf:latest
     platform: linux/arm64
     container_name: evershelf
     ports:

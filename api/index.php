@@ -2814,7 +2814,7 @@ function haParseRecipeGenerateInput(): array {
 
     $dietary = $input['dietary_restrictions'] ?? $input['dietary'] ?? env('DIETARY', '');
 
-    $lang = $input['lang'] ?? env('APP_LANG', 'en');
+    $lang = 'de';
 
     return [
         'meal' => $meal,
@@ -3070,7 +3070,7 @@ function haRefreshPrices(PDO $db): void {
     try {
         $country  = env('PRICE_COUNTRY', 'Italia');
         $currency = env('PRICE_CURRENCY', 'EUR');
-        $lang     = env('APP_LANG', 'en');
+        $lang     = 'de';
 
         $clientItems = [];
         if (isShoppingBringMode()) {
@@ -8559,7 +8559,7 @@ function geminiChat(PDO $db): void {
     $history = $input['history'] ?? [];
     $appliances = $input['appliances'] ?? [];
     $dietaryRestrictions = $input['dietary_restrictions'] ?? '';
-    $lang = recipeNormalizeLang($input['lang'] ?? 'en');
+    $lang = recipeNormalizeLang($input['lang'] ?? 'de');
     $langName = recipeLangName($lang);
 
     if (empty($message)) {
@@ -8673,14 +8673,14 @@ PROMPT;
 }
 
     function recipeNormalizeLang($lang): string {
-        $lang = is_string($lang) ? strtolower(trim($lang)) : 'en';
+        $lang = is_string($lang) ? strtolower(trim($lang)) : 'de';
         // Accept zh-CN / zh_cn → zh
         if (str_starts_with($lang, 'zh')) {
             $lang = 'zh';
         } else {
             $lang = substr($lang, 0, 2);
         }
-        return in_array($lang, ['it', 'en', 'de', 'fr', 'es', 'zh'], true) ? $lang : 'en';
+        return 'de';
     }
 
     function recipeLangName(string $lang): string {
@@ -10115,7 +10115,7 @@ function generateRecipe(PDO $db): void {
     if (!is_array($input)) {
         $input = [];
     }
-    $lang = recipeNormalizeLang($input['lang'] ?? 'en');
+    $lang = recipeNormalizeLang($input['lang'] ?? 'de');
     $recipeLangName = recipeLangName($lang);
     $mealType = $input['meal'] ?? 'pranzo';
     $persons = max(1, intval($input['persons'] ?? 1));
@@ -10522,7 +10522,7 @@ function chatToRecipe(PDO $db): void {
 
     $input = json_decode(file_get_contents('php://input'), true);
     $replyText = trim($input['text'] ?? '');
-    $lang = recipeNormalizeLang($input['lang'] ?? 'en');
+    $lang = recipeNormalizeLang($input['lang'] ?? 'de');
 
     if (empty($replyText)) {
         echo json_encode(['success' => false, 'error' => 'empty_text']);
@@ -10630,7 +10630,7 @@ function recipeFromIngredient(PDO $db): void {
         echo json_encode(['success' => false, 'error' => 'empty_ingredient']);
         return;
     }
-    $lang = recipeNormalizeLang($input['lang'] ?? 'en');
+    $lang = recipeNormalizeLang($input['lang'] ?? 'de');
     $persons = max(1, intval($input['persons'] ?? 1));
 
     $items = recipeFetchPantryItems($db);
@@ -10756,7 +10756,7 @@ function generateRecipeStream(PDO $db): void {
     try {
 
     $input               = json_decode(file_get_contents('php://input'), true) ?? [];
-    $lang                = recipeNormalizeLang($input['lang'] ?? 'en');
+    $lang                = recipeNormalizeLang($input['lang'] ?? 'de');
     $recipeLangName      = recipeLangName($lang);
     $mealType            = $input['meal'] ?? 'pranzo';
     $persons             = max(1, intval($input['persons'] ?? 1));
@@ -16529,7 +16529,7 @@ function bringSuggestItems(PDO $db): void {
     }
 
     // 4. Seasonal tip (fallback static, overridden by Gemini below)
-    $lang = env('APP_LANG', 'en');
+    $lang = 'de';
     $monthTipsAll = [
         'it' => [
             1  => 'Gennaio: arance, mandarini, kiwi, carciofi e verze sono di stagione.',
@@ -17570,7 +17570,7 @@ function reportBugManual(): void {
     $ua    = substr(trim($input['user_agent']  ?? ($_SERVER['HTTP_USER_AGENT'] ?? '')), 0, 300);
     $url   = substr(trim($input['url']         ?? ''), 0, 300);
     $ver   = substr(trim($input['version']     ?? ''), 0, 50);
-    $lang  = preg_replace('/[^a-z\-]/', '', strtolower($input['lang'] ?? 'en'));
+    $lang  = 'de';
 
     if (empty($title) || empty($desc)) {
         echo json_encode(['ok' => false, 'error' => 'title and description required']);
@@ -17961,7 +17961,7 @@ function geminiProductHint(): void {
     $input    = json_decode(file_get_contents('php://input'), true) ?? [];
     $name     = trim($input['name']    ?? '');
     $category = trim($input['category'] ?? '');
-    $lang     = trim($input['lang']    ?? 'en');
+    $lang     = 'de';
 
     if (empty($name)) {
         echo json_encode(['success' => false, 'error' => 'missing name']);
@@ -18052,7 +18052,7 @@ function geminiShoppingEnrich(PDO $db): void {
 
     $input = json_decode(file_get_contents('php://input'), true) ?? [];
     $items = $input['items'] ?? [];
-    $lang  = trim($input['lang'] ?? 'en');
+    $lang  = 'de';
 
     if (empty($items)) {
         echo json_encode(['success' => true, 'items' => []]);
@@ -18185,7 +18185,7 @@ function geminiBarcodeVisual(): void {
 
     $input = json_decode(file_get_contents('php://input'), true) ?? [];
     $imageBase64 = $input['image'] ?? '';
-    $lang = $input['lang'] ?? 'en';
+    $lang = 'de';
     if (empty($imageBase64)) {
         echo json_encode(['found' => false, 'error' => 'no_image']);
         return;
@@ -18285,7 +18285,7 @@ function geminiAnomalyExplain(): void {
     $diff      = $input['diff']              ?? 0;
     $direction = $input['direction']         ?? 'missing';
     $unit      = $input['unit']              ?? 'pz';
-    $lang      = trim($input['lang']         ?? 'en');
+    $lang      = 'de';
 
     if (empty($name)) {
         echo json_encode(['success' => false, 'error' => 'missing name']);
@@ -18822,7 +18822,7 @@ function getShoppingPrice(PDO $db): void {
     $pkgUnit = trim($input['package_unit']     ?? '');
     $country = trim($input['country']          ?? env('PRICE_COUNTRY', 'Italia'));
     $currency= trim($input['currency']         ?? env('PRICE_CURRENCY', 'EUR'));
-    $lang    = trim($input['lang']             ?? 'en');
+    $lang    = 'de';
     $forceRefresh = !empty($input['force_refresh']);
     $maxAge = _shoppingPriceMaxAgeSeconds();
 
@@ -18896,7 +18896,7 @@ function getAllShoppingPrices(PDO $db): void {
     $clientItems = $input['items'] ?? [];
     $country  = trim($input['country']  ?? env('PRICE_COUNTRY', 'Italia'));
     $currency = trim($input['currency'] ?? env('PRICE_CURRENCY', 'EUR'));
-    $lang     = trim($input['lang']     ?? 'en');
+    $lang     = 'de';
     $forceRefresh = !empty($input['force_refresh']);
 
     $result = _computeAllShoppingPrices($clientItems, $country, $currency, $lang, $forceRefresh);
