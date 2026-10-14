@@ -16899,6 +16899,7 @@ async function autoSyncUrgencySpecs() {
 }
 
 async function loadShoppingList() {
+    const requestId = ++loadShoppingList._requestId;
     const statusEl = document.getElementById('bring-status');
     const currentEl = document.getElementById('shopping-current');
     const suggestionsEl = document.getElementById('shopping-suggestions');
@@ -16912,6 +16913,7 @@ async function loadShoppingList() {
     if (isBackgroundCall) {
         try {
             const data = await api('shopping_list');
+            if (requestId !== loadShoppingList._requestId) return;
             if (data.success) {
                 const newItems = data.purchase || [];
                 const newNames = new Set(newItems.map(i => i.name.toLowerCase()));
@@ -16936,10 +16938,13 @@ async function loadShoppingList() {
         return;
     }
     
-    statusEl.style.display = 'block';
-    statusEl.innerHTML = `<div class="bring-loading"><div class="loading-spinner"></div> ${t(_isShoppingBringMode() ? 'shopping.bring_loading' : 'shopping.list_loading')}</div>`;
-    currentEl.style.display = 'none';
-    suggestionsEl.style.display = 'none';
+    const hadExistingItems = Array.isArray(shoppingItems) && shoppingItems.length > 0;
+    statusEl.style.display = hadExistingItems ? 'none' : 'block';
+    if (!hadExistingItems) {
+        statusEl.innerHTML = `<div class="bring-loading"><div class="loading-spinner"></div> ${t(_isShoppingBringMode() ? 'shopping.bring_loading' : 'shopping.list_loading')}</div>`;
+        currentEl.style.display = 'none';
+        suggestionsEl.style.display = 'none';
+    }
 
     // ── Demo mode: show placeholder list, skip all Bring! API calls ──────────
     if (_demoMode) {
@@ -16965,6 +16970,7 @@ async function loadShoppingList() {
     
     try {
         const data = await api('shopping_list');
+        if (requestId !== loadShoppingList._requestId) return;
         statusEl.style.display = 'none';
         
         if (!data.success) {
@@ -17015,6 +17021,7 @@ async function loadShoppingList() {
 
     } catch (err) {
         console.error('Bring! error:', err);
+        if (requestId !== loadShoppingList._requestId) return;
         const cached = _offlineShoppingCacheGet();
         if (cached?.items?.length) {
             shoppingItems = cached.items;
@@ -23839,6 +23846,7 @@ function toggleShoppingScanAddMode() {
     showToast(t(_shoppingScanAddMode ? 'scan.shopping_add_mode_on' : 'scan.shopping_add_mode_off'), 'info');
     if (_shoppingScanAddMode) showPage('scan');
 }
+loadShoppingList._requestId = 0;
 
 function _updateInventoryModeBanner() {
     const banner = document.getElementById('inventory-mode-banner');
