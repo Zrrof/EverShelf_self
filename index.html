@@ -818,16 +818,15 @@
             <h2 data-i18n="shopping.title">🛒 Lista della Spesa</h2>
         </div>
         <div class="shopping-container">
+            <form class="shopping-manual-form" id="shopping-manual-form" onsubmit="submitManualShoppingInput(event)">
+                <span class="shopping-manual-icon" aria-hidden="true">⌕</span>
+                <input id="shopping-manual-input" class="shopping-manual-input" type="text" autocomplete="off"
+                       data-i18n-placeholder="shopping.manual_add_placeholder" placeholder="Produkt zur Einkaufsliste hinzufügen">
+                <button type="submit" class="shopping-manual-submit" data-i18n="shopping.manual_add_submit">Hinzufügen</button>
+                <button type="button" class="shopping-manual-scan" onclick="openShoppingBarcodeScanner()" data-i18n-title="shopping.scan_add_btn" title="Barcode scannen" aria-label="Barcode scannen">▦</button>
+            </form>
             <div class="bring-status" id="bring-status">
                 <div class="bring-loading" data-i18n="shopping.bring_loading">Connessione a Bring!...</div>
-            </div>
-
-            <div class="shopping-entry-bar">
-                <button type="button" class="shopping-entry-button" onclick="addManualShoppingItem()">
-                    <span class="shopping-entry-search">⌕</span>
-                    <span data-i18n="shopping.manual_add_btn">Produkt hinzufügen</span>
-                </button>
-                <button type="button" class="shopping-entry-scan" onclick="openShoppingBarcodeScanner()" data-i18n-title="shopping.scan_add_btn" title="Barcode scannen">▦</button>
             </div>
 
             <!-- Tab navigation -->

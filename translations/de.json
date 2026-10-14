@@ -663,6 +663,8 @@
         "search_prices": "🔍 Alle Preise suchen",
         "suggest_btn": "Einkaufsvorschläge",
         "manual_add_btn": "➕ Artikel hinzufügen",
+        "manual_add_placeholder": "Produkt zur Einkaufsliste hinzufügen",
+        "manual_add_submit": "Hinzufügen",
         "manual_add_prompt": "Was möchtest du zur Einkaufsliste hinzufügen?",
         "manual_add_success": "Artikel zur Einkaufsliste hinzugefügt",
         "manual_add_error": "Artikel konnte nicht hinzugefügt werden",

@@ -17884,10 +17884,19 @@ async function generateSuggestions() {
 }
 generateSuggestions._busy = false;
 
-async function addManualShoppingItem() {
-    const value = window.prompt(t('shopping.manual_add_prompt') || 'Was möchtest du zur Einkaufsliste hinzufügen?');
+async function submitManualShoppingInput(event) {
+    event?.preventDefault();
+    const input = document.getElementById('shopping-manual-input');
+    const value = input?.value || '';
+    await addManualShoppingItem(value);
+}
+
+async function addManualShoppingItem(prefilledName = '') {
+    const value = prefilledName || window.prompt(t('shopping.manual_add_prompt') || 'Was möchtest du zur Einkaufsliste hinzufügen?');
     const name = (value || '').trim();
     if (!name) return;
+    const input = document.getElementById('shopping-manual-input');
+    if (input) input.value = '';
     const result = await api('shopping_add', {}, 'POST', {
         items: [{ name, rawName: name, specification: '' }],
         listUUID: shoppingListUUID,

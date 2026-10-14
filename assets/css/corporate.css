@@ -126,6 +126,25 @@ button {
     gap: 10px;
     margin: 4px 0 16px;
 }
+
+.shopping-manual-form {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 58px;
+    margin: 0 0 16px;
+    padding: 0 8px 0 18px;
+    border: 1px solid #dedede;
+    border-radius: 31px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(0,0,0,.09);
+}
+.shopping-manual-icon { color: #e5a900; font-size: 2rem; line-height: 1; }
+.shopping-manual-input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: #222; font: inherit; font-size: 1.05rem; }
+.shopping-manual-input::placeholder { color: #777; }
+.shopping-manual-submit { min-height: 42px; padding: 0 17px; border: 0; border-radius: 22px; background: #f5b900; color: #171717; font-weight: 700; }
+.shopping-manual-scan { flex: 0 0 46px; width: 46px; height: 46px; border: 0; border-radius: 50%; background: #f5b900; color: #171717; font-size: 1.5rem; }
 .shopping-entry-button,
 .shopping-entry-scan {
     min-height: 58px;

@@ -51,7 +51,7 @@ test('Smantry-Hauptnavigation und Primäraktionen sind sichtbar verdrahtet', () 
     for (const token of [
         'data-page="dashboard"', 'data-page="inventory"', 'data-page="shopping"', 'data-page="settings"',
         'id="nav-more-menu"', 'dashboard-primary-actions', 'onclick="showPage(\'scan\')"',
-        'onclick="showPage(\'add\')"', 'onclick="addManualShoppingItem()"', 'onclick="openShoppingBarcodeScanner()"',
+        'onclick="showPage(\'add\')"', 'id="shopping-manual-form"', 'id="shopping-manual-input"', 'onclick="openShoppingBarcodeScanner()"',
     ]) assert.ok(html.includes(token), `fehlt: ${token}`);
 });
 
@@ -94,7 +94,9 @@ test('Produktfelder werden migriert und gespeichert', () => {
 });
 
 test('Manuelle Einkaufslistenaufnahme und Barcode-Weiterleitung bleiben explizit', () => {
-    const manual = js.match(/async function addManualShoppingItem\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    const manual = js.match(/async function addManualShoppingItem\([^)]*\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    const submit = js.match(/async function submitManualShoppingInput\([^)]*\) \{([\s\S]*?)\n\}/)?.[1] || '';
+    assert.match(submit, /shopping-manual-input/);
     assert.match(manual, /window\.prompt/);
     assert.match(manual, /shopping_add/);
     const scanner = js.match(/function openShoppingBarcodeScanner\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
